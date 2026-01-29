@@ -4,6 +4,7 @@
 #include "Rendering/Framebuffer.h"
 #include "Rendering/Renderer.h"
 #include "Rendering/Camera.h"
+#include "EffectView.h"
 
 namespace MikuMikuWorld
 {
@@ -76,5 +77,7 @@ namespace MikuMikuWorld
 		
 		inline bool isFullWindow() const { return fullWindow; };
 		bool wasLastFrameFullWindow() const { return lastFrameFullWindow; }
+
+		void loadNoteEffects(Effect::EffectView& effectView);
 	};
 }

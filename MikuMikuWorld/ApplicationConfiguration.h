@@ -139,6 +139,8 @@ namespace MikuMikuWorld
 		float pvBackgroundBrightness;
 		bool pvDrawToolbar;
 		int notesSkin;
+		int pvEffectsProfile;
+		bool pvEnableEffects;
 
 		InputConfiguration input;
 

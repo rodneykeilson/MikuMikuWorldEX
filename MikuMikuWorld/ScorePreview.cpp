@@ -349,11 +349,24 @@ std::array<DirectX::XMFLOAT4, 4> ScorePreviewBackground::DefaultJacket::getRight
 		if (config.drawBackground && background.shouldUpdate(context.workingData.jacket))
 			background.update(renderer, context.workingData.jacket);
 
+		if (!context.scorePreviewDrawData.effectView.isInitialized())
+			context.scorePreviewDrawData.effectView.init();
+
+		if (playbackState.isPlaying)
+		{
+			if (!playbackState.wasLastFramePlaying)
+				context.scorePreviewDrawData.effectView.reset();
+
+			context.scorePreviewDrawData.effectView.update(context);
+		}
+
 		static int shaderId = ResourceManager::getShader("basic2d");
-		if (shaderId == -1)
+		static int pteShaderId = ResourceManager::getShader("particles");
+		if (shaderId == -1 || pteShaderId == -1)
 			return;
 
 		Shader* shader = ResourceManager::shaders[shaderId];
+		Shader* pteShader = ResourceManager::shaders[pteShaderId];
 		shader->use();
 
 		float width  = size.x, height = size.y;
@@ -368,6 +381,11 @@ std::array<DirectX::XMFLOAT4, 4> ScorePreviewBackground::DefaultJacket::getRight
 		auto view = DirectX::XMMatrixScaling(scaledWidth, scaledHeight, 1.f) * DirectX::XMMatrixTranslation(0.f, -scrTop, 0.f);
 		auto projection = Camera::getOffCenterOrthographicProjectionStatic(-width / 2, width / 2, height / 2, -height / 2);
 		auto viewProjection = view * projection;
+
+		const auto pView = noteEffectsCamera.getViewMatrix();
+		auto pProjection = noteEffectsCamera.getProjectionMatrix(aspectRatio, 0.3f, 1000.f);
+		float projectionScale = std::min(aspectRatio / EFFECTS_TARGET_ASPECT, 1.f);
+		pProjection = DirectX::XMMatrixScaling(projectionScale, projectionScale, 1.f) * pProjection;
 		
 		shader->setMatrix4("projection", viewProjection);
 		float currentTime = context.getTimeAtCurrentTick();
@@ -386,6 +404,8 @@ std::array<DirectX::XMFLOAT4, 4> ScorePreviewBackground::DefaultJacket::getRight
 		drawStage(renderer);
 		renderer->endBatch();
 
+		context.scorePreviewDrawData.effectView.updateEffects(context, noteEffectsCamera, currentTime);
+
 		shader->use();
 		shader->setMatrix4("projection", viewProjection);
 		renderer->beginBatch();
@@ -397,6 +417,13 @@ std::array<DirectX::XMFLOAT4, 4> ScorePreviewBackground::DefaultJacket::getRight
 		}
 		else
 			renderer->endBatch();
+
+		pteShader->use();
+		pteShader->setMatrix4("projection", pProjection);
+		pteShader->setMatrix4("view", pView);
+		renderer->beginBatch();
+		context.scorePreviewDrawData.effectView.drawUnderNoteEffects(renderer, currentTime);
+		renderer->endBatchWithBlending(GL_ONE, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
 
 		shader->use();
 		shader->setMatrix4("projection", viewProjection);
@@ -412,6 +439,13 @@ std::array<DirectX::XMFLOAT4, 4> ScorePreviewBackground::DefaultJacket::getRight
 		}
 		else
 			renderer->endBatch();
+
+		pteShader->use();
+		pteShader->setMatrix4("projection", pProjection);
+		pteShader->setMatrix4("view", pView);
+		renderer->beginBatch();
+		context.scorePreviewDrawData.effectView.drawEffects(renderer, currentTime);
+		renderer->endBatchWithBlending(GL_ONE, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
 
 		previewBuffer.unblind();
 		drawList->AddImage((ImTextureID)(size_t)previewBuffer.getTexture(), position, position + size, {0, 1}, {1, 0});
@@ -1196,6 +1230,51 @@ std::array<DirectX::XMFLOAT4, 4> ScorePreviewBackground::DefaultJacket::getRight
 		}
 		
 		ImGui::EndChild();
+	}
+
+	void ScorePreviewWindow::loadNoteEffects(Effect::EffectView& effectView)
+	{
+		const std::string effectsDir = Application::getAppDir() + "res\\effect\\" + std::to_string(config.pvEffectsProfile) + "\\";
+		size_t effectCount = arrayLength(Effect::effectNames);
+
+		if (!IO::File::exists(effectsDir))
+			return;
+
+		// Cleanup. We don't want all profiles and their resources loaded in memory
+		ResourceManager::removeAllParticleEffects();
+		int texIndex = ResourceManager::getTexture("tex_note_common_all_v2.png");
+		if (texIndex > -1)
+			ResourceManager::disposeTexture(texIndex);
+
+		ResourceManager::loadTexture(effectsDir + "tex_note_common_all_v2.png");
+
+		std::vector<std::string> failedParticleFiles;
+		for (size_t i = 0; i < effectCount; i++)
+		{
+			const std::string filename{ effectsDir + Effect::effectNames[i] + ".json" };
+			int particleId = ResourceManager::loadParticleEffect(filename);
+
+			if (particleId == -1)
+				failedParticleFiles.push_back(filename);
+		}
+
+		if (!failedParticleFiles.empty())
+		{
+			std::string fullErrorMessage = "Failed to load the following note effects: \n\n";
+			for (const auto& error : failedParticleFiles)
+				fullErrorMessage.append(error).append("\n");
+
+			IO::messageBox(
+				APP_NAME,
+				fullErrorMessage,
+				IO::MessageBoxButtons::Ok,
+				IO::MessageBoxIcon::Warning,
+				Application::windowState.windowHandle
+			);
+		}
+
+		effectView.reset();
+		effectView.init();
 	}
 }
 

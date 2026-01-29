@@ -218,9 +218,85 @@ namespace MikuMikuWorld
 
 	void Renderer::endBatchWithDepthTest(int depthFunc)
 	{
-		// MMW compatibility - MMWCC doesn't use depth testing the same way
-		// Just call regular endBatch for now
+		GLboolean depthTest = glIsEnabled(GL_DEPTH_TEST);
+		if (!depthTest)
+			glEnable(GL_DEPTH_TEST);
+		GLint oldFunc;
+		glGetIntegerv(GL_DEPTH_FUNC, &oldFunc);
+		glDepthFunc(depthFunc);
+
 		endBatch();
+
+		glDepthFunc(oldFunc);
+		if (!depthTest)
+			glDisable(GL_DEPTH_TEST);
+	}
+
+	void Renderer::endBatchWithBlending(int srcRGB, int dstRGB, int srcA, int dstA)
+	{
+		GLboolean blending = glIsEnabled(GL_BLEND);
+		if (!blending)
+			glEnable(GL_BLEND);
+		GLint oldSrcRGB, oldDstRGB, oldSrcAlpha, oldDstAlpha;
+		glGetIntegerv(GL_BLEND_SRC_RGB, &oldSrcRGB);
+		glGetIntegerv(GL_BLEND_DST_RGB, &oldDstRGB);
+		glGetIntegerv(GL_BLEND_SRC_ALPHA, &oldSrcAlpha);
+		glGetIntegerv(GL_BLEND_DST_ALPHA, &oldDstAlpha);
+		glBlendFuncSeparate(srcRGB, dstRGB, srcA, dstA);
+
+		endBatch();
+
+		glBlendFuncSeparate(oldSrcRGB, oldDstRGB, oldSrcAlpha, oldDstAlpha);
+		if (!blending)
+			glDisable(GL_BLEND);
+	}
+
+	void Renderer::drawQuadWithBlend(const DirectX::XMMATRIX& matrix, const Texture& tex, int splitX, int splitY, int frame, const Color& color, int order, float blend, int flipUVs)
+	{
+		float tileWidth = 1.0f / splitX;
+		float tileHeight = 1.0f / splitY;
+		int tileX = frame % splitX;
+		int tileY = frame / splitX;
+
+		float u1 = tileX * tileWidth;
+		float v1 = tileY * tileHeight;
+		float u2 = u1 + tileWidth;
+		float v2 = v1 + tileHeight;
+
+		if (flipUVs)
+		{
+			std::swap(v1, v2);
+		}
+
+		Quad q;
+		q.matrix = matrix;
+		q.texture = tex.getID();
+		q.zIndex = order;
+
+		DirectX::XMVECTOR colorVec = DirectX::XMVectorSet(color.r, color.g, color.b, color.a);
+
+		// top-right, bottom-right, bottom-left, top-left
+		q.vertices[0].position = DirectX::XMVectorSet(0.5f, 0.5f, 0, 1);
+		q.vertices[0].uv = DirectX::XMVectorSet(u2, v1, 0, blend);
+		q.vertices[0].color = colorVec;
+
+		q.vertices[1].position = DirectX::XMVectorSet(0.5f, -0.5f, 0, 1);
+		q.vertices[1].uv = DirectX::XMVectorSet(u2, v2, 0, blend);
+		q.vertices[1].color = colorVec;
+
+		q.vertices[2].position = DirectX::XMVectorSet(-0.5f, -0.5f, 0, 1);
+		q.vertices[2].uv = DirectX::XMVectorSet(u1, v2, 0, blend);
+		q.vertices[2].color = colorVec;
+
+		q.vertices[3].position = DirectX::XMVectorSet(-0.5f, 0.5f, 0, 1);
+		q.vertices[3].uv = DirectX::XMVectorSet(u1, v1, 0, blend);
+		q.vertices[3].color = colorVec;
+
+		quads.push_back(q);
+
+		++numQuads;
+		numVertices += 4;
+		numIndices += 6;
 	}
 	
 	void Renderer::pushQuadMasked(const std::array<DirectX::XMVECTOR, 4>& pos,

@@ -1,6 +1,7 @@
 #pragma once
 #include "Score.h"
 #include "Math.h"
+#include "EffectView.h"
 
 namespace MikuMikuWorld
 {
@@ -56,6 +57,7 @@ namespace MikuMikuWorld::Engine
 		std::vector<DrawingLine> drawingLines;
 		std::vector<DrawingHoldTick> drawingHoldTicks;
 		std::vector<DrawingHoldSegment> drawingHoldSegments;
+		Effect::EffectView effectView;
 
 		void clear();
 		void calculateDrawData(Score const& score);

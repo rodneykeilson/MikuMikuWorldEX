@@ -135,6 +135,8 @@ namespace MikuMikuWorld
 			pvBackgroundBrightness = jsonIO::tryGetValue<float>(config["preview"], "background_brightness", 0.5f);
 			pvDrawToolbar = jsonIO::tryGetValue<bool>(config["preview"], "draw_toolbar", true);
 			notesSkin = jsonIO::tryGetValue<int>(config["preview"], "notes_skin", 0);
+			pvEffectsProfile = jsonIO::tryGetValue<int>(config["preview"], "effects_profile", 0);
+			pvEnableEffects = jsonIO::tryGetValue<bool>(config["preview"], "enable_effects", true);
 		}
 
 		if (jsonIO::keyExists(config, "input") && jsonIO::keyExists(config["input"], "bindings"))
@@ -229,7 +231,9 @@ namespace MikuMikuWorld
 			                  { "stage_opacity", pvStageOpacity },
 			                  { "background_brightness", pvBackgroundBrightness },
 			                  { "draw_toolbar", pvDrawToolbar },
-			                  { "notes_skin", notesSkin } };
+			                  { "notes_skin", notesSkin },
+			                  { "effects_profile", pvEffectsProfile },
+			                  { "enable_effects", pvEnableEffects } };
 
 		json keyBindings;
 		for (const auto& binding : bindings)
@@ -308,6 +312,8 @@ namespace MikuMikuWorld
 		pvBackgroundBrightness = 0.5f;
 		pvDrawToolbar = true;
 		notesSkin = 0;
+		pvEffectsProfile = 0;
+		pvEnableEffects = true;
 
 		debugEnabled = false;
 	}

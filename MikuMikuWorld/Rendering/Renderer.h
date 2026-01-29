@@ -65,7 +65,9 @@ namespace MikuMikuWorld
 	void bindTexture(int tex);
 	void beginBatch();
 	void endBatch();
-	void endBatchWithDepthTest(int depthFunc); // MMW compatibility
+	void endBatchWithDepthTest(int depthFunc);
+	void endBatchWithBlending(int srcRGB, int dstRGB, int srcA, int dstA);
+	void drawQuadWithBlend(const DirectX::XMMATRIX& matrix, const Texture& tex, int splitX, int splitY, int frame, const Color& color, int order, float blend, int flipUVs);
 
 	inline int getNumVertices() const { return numBatchVertices; }
 	inline int getNumQuads() const { return numBatchQuads; }
