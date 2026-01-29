@@ -3,6 +3,7 @@
 #include "Colors.h"
 #include "IO.h"
 #include "Localization.h"
+#include "NoteSkin.h"
 #include "ResourceManager.h"
 #include "Utilities.h"
 #include <filesystem>
@@ -314,6 +315,29 @@ namespace MikuMikuWorld
 	void Application::loadResources()
 	{
 		ResourceManager::loadShader(appDir + "res\\shaders\\basic2d");
+		ResourceManager::loadShader(appDir + "res\\shaders\\masking");
+		ResourceManager::loadShader(appDir + "res\\shaders\\particles");
+		
+		// Load note skins for preview (MMW-compatible)
+		const std::string notes01TexDir = appDir + "res\\notes\\01\\";
+		ResourceManager::loadTexture(notes01TexDir + "notes.png");
+		ResourceManager::loadTexture(notes01TexDir + "longNoteLine.png");
+		ResourceManager::loadTexture(notes01TexDir + "touchLine_eff.png");
+		noteSkins.add("Notes 01", 0, 1, 2);
+
+		const std::string notes02TexDir = appDir + "res\\notes\\02\\";
+		ResourceManager::loadTexture(notes02TexDir + "notes.png");
+		ResourceManager::loadTexture(notes02TexDir + "longNoteLine.png");
+		ResourceManager::loadTexture(notes02TexDir + "touchLine_eff.png");
+		noteSkins.add("Notes 02", 3, 4, 5);
+		
+		// Load editor assets
+		const std::string editorAssetsDir = appDir + "res\\editor\\";
+		ResourceManager::loadTexture(editorAssetsDir + "timeline_tools.png");
+		ResourceManager::loadTexture(editorAssetsDir + "note_stats.png");
+		ResourceManager::loadTexture(editorAssetsDir + "stage.png");
+		
+		// Load MMWCC-specific sprite sheet textures for timeline
 		const std::string texturesDir = appDir + "res\\textures\\";
 		ResourceManager::loadTexture(texturesDir + "notes1.png",
 		                             TextureFilterMode::LinearMipMapLinear,
@@ -349,6 +373,9 @@ namespace MikuMikuWorld
 		noteTextures.touchLine = ResourceManager::getTexture(TOUCH_LINE_TEX);
 		noteTextures.ccNotes = ResourceManager::getTexture(CC_NOTES_TEX);
 		noteTextures.guideColors = ResourceManager::getTexture(GUIDE_COLORS_TEX);
+
+		// Load sprite transforms for preview
+		ResourceManager::loadTransforms(appDir + "res\\effect\\transform.txt");
 
 		Localization::loadLanguages(appDir + "res\\i18n");
 	}

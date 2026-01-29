@@ -75,6 +75,7 @@ namespace MikuMikuWorld
 		MultiInputBinding timelineHiSpeed = { "timeline_hi_speed",
 			                                  { ImGuiKey_0 },
 			                                  { ImGuiKey_Keypad0 } };
+		MultiInputBinding togglePreviewFullWindow = { "toggle_preview_fullscreen", {} };
 	};
 
 	constexpr size_t maxRecentFilesEntries = 10;
@@ -123,6 +124,21 @@ namespace MikuMikuWorld
 		float seVolume;
 		int seProfileIndex;
 		bool debugEnabled;
+
+		// Preview settings
+		bool pvLockAspectRatio;
+		bool pvMirrorScore;
+		bool pvFlickAnimation;
+		bool pvSimultaneousLine;
+		bool pvHoldAnimation;
+		float pvNoteSpeed;
+		float pvHoldAlpha;
+		float pvGuideAlpha;
+		float pvStageCover;
+		float pvStageOpacity;
+		float pvBackgroundBrightness;
+		bool pvDrawToolbar;
+		int notesSkin;
 
 		InputConfiguration input;
 
@@ -185,6 +201,7 @@ namespace MikuMikuWorld
 		&config.input.timelineBpm,
 		&config.input.timelineTimeSignature,
 		&config.input.timelineHiSpeed,
+		&config.input.togglePreviewFullWindow,
 
 		&config.input.openHelp,
 		&config.input.openSettings,

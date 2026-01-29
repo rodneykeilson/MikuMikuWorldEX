@@ -11,6 +11,11 @@
 
 namespace IO
 {
+	// Common file filters
+	FileDialogFilter imageFilter{ "Image Files", "*.png;*.jpg;*.jpeg;*.bmp" };
+	FileDialogFilter musicFilter{ "Audio Files", "*.mp3;*.wav;*.ogg;*.flac" };
+	FileDialogFilter allFilter{ "All Files", "*.*" };
+
 	File::File(const std::wstring& filename, const wchar_t* mode)
 	{
 		stream = NULL;

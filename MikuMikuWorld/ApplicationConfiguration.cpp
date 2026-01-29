@@ -120,6 +120,23 @@ namespace MikuMikuWorld
 			                      0.0f, 1.0f);
 		}
 
+		if (jsonIO::keyExists(config, "preview"))
+		{
+			pvLockAspectRatio = jsonIO::tryGetValue<bool>(config["preview"], "lock_aspect_ratio", true);
+			pvMirrorScore = jsonIO::tryGetValue<bool>(config["preview"], "mirror_score", false);
+			pvFlickAnimation = jsonIO::tryGetValue<bool>(config["preview"], "flick_animation", true);
+			pvSimultaneousLine = jsonIO::tryGetValue<bool>(config["preview"], "simultaneous_line", true);
+			pvHoldAnimation = jsonIO::tryGetValue<bool>(config["preview"], "hold_animation", true);
+			pvNoteSpeed = jsonIO::tryGetValue<float>(config["preview"], "note_speed", 9.0f);
+			pvHoldAlpha = jsonIO::tryGetValue<float>(config["preview"], "hold_alpha", 1.0f);
+			pvGuideAlpha = jsonIO::tryGetValue<float>(config["preview"], "guide_alpha", 0.6f);
+			pvStageCover = jsonIO::tryGetValue<float>(config["preview"], "stage_cover", 0.0f);
+			pvStageOpacity = jsonIO::tryGetValue<float>(config["preview"], "stage_opacity", 1.0f);
+			pvBackgroundBrightness = jsonIO::tryGetValue<float>(config["preview"], "background_brightness", 0.5f);
+			pvDrawToolbar = jsonIO::tryGetValue<bool>(config["preview"], "draw_toolbar", true);
+			notesSkin = jsonIO::tryGetValue<int>(config["preview"], "notes_skin", 0);
+		}
+
 		if (jsonIO::keyExists(config, "input") && jsonIO::keyExists(config["input"], "bindings"))
 		{
 			for (auto& [key, value] : config["input"]["bindings"].items())
@@ -200,6 +217,20 @@ namespace MikuMikuWorld
 			                { "bgm_volume", bgmVolume },
 			                { "se_volume", seVolume } };
 
+		config["preview"] = { { "lock_aspect_ratio", pvLockAspectRatio },
+			                  { "mirror_score", pvMirrorScore },
+			                  { "flick_animation", pvFlickAnimation },
+			                  { "simultaneous_line", pvSimultaneousLine },
+			                  { "hold_animation", pvHoldAnimation },
+			                  { "note_speed", pvNoteSpeed },
+			                  { "hold_alpha", pvHoldAlpha },
+			                  { "guide_alpha", pvGuideAlpha },
+			                  { "stage_cover", pvStageCover },
+			                  { "stage_opacity", pvStageOpacity },
+			                  { "background_brightness", pvBackgroundBrightness },
+			                  { "draw_toolbar", pvDrawToolbar },
+			                  { "notes_skin", notesSkin } };
+
 		json keyBindings;
 		for (const auto& binding : bindings)
 		{
@@ -263,6 +294,20 @@ namespace MikuMikuWorld
 		masterVolume = 1.0f;
 		bgmVolume = 1.0f;
 		seVolume = 1.0f;
+
+		pvLockAspectRatio = true;
+		pvMirrorScore = false;
+		pvFlickAnimation = true;
+		pvSimultaneousLine = true;
+		pvHoldAnimation = true;
+		pvNoteSpeed = 9.0f;
+		pvHoldAlpha = 1.0f;
+		pvGuideAlpha = 0.6f;
+		pvStageCover = 0.0f;
+		pvStageOpacity = 1.0f;
+		pvBackgroundBrightness = 0.5f;
+		pvDrawToolbar = true;
+		notesSkin = 0;
 
 		debugEnabled = false;
 	}

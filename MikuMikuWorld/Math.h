@@ -62,6 +62,8 @@ namespace MikuMikuWorld
 				          start.b + (end.b - start.b) * ratio,
 				          start.a + (end.a - start.a) * ratio };
 		}
+
+		inline Color scaleAlpha(float scalar) const { return Color{ r, g, b, a * scalar }; }
 	};
 
 	constexpr uint32_t roundUpToPowerOfTwo(uint32_t v)
@@ -77,6 +79,9 @@ namespace MikuMikuWorld
 	}
 
 	float lerp(float start, float end, float ratio);
+	float unlerp(float start, float end, float value);
+	double lerpD(double start, double end, double ratio);
+	double unlerpD(double start, double end, double value);
 	float easeIn(float start, float end, float ratio);
 	float easeOut(float start, float end, float ratio);
 	float easeInOut(float start, float end, float ratio);
@@ -87,4 +92,17 @@ namespace MikuMikuWorld
 	std::function<float(float, float, float)> getEaseFunction(EaseType ease);
 
 	uint32_t gcf(uint32_t a, uint32_t b);
+
+	struct Range
+	{
+		double min;
+		double max;
+	};
+
+	static constexpr double NUM_PI = 3.14159265358979323846;
+	static constexpr double NUM_PI_2 = 3.14159265358979323846 / 2;
+	static constexpr double DEGREE_TO_RAD = NUM_PI / 180;
+
+	float easeInCubic(float x);
+	float easeOutCubic(float x);
 }

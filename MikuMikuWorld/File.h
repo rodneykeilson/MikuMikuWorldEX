@@ -69,6 +69,11 @@ namespace IO
 		std::string filterType;
 	};
 
+	// Common file filters
+	extern FileDialogFilter imageFilter;
+	extern FileDialogFilter musicFilter;
+	extern FileDialogFilter allFilter;
+
 	class FileDialog
 	{
 	  private:
