@@ -156,6 +156,18 @@
     <ClCompile Include="ScorePreview.cpp">
       <Filter>Preview</Filter>
     </ClCompile>
+    <ClCompile Include="MinMax.cpp">
+      <Filter>Preview</Filter>
+    </ClCompile>
+    <ClCompile Include="Particle.cpp">
+      <Filter>Preview</Filter>
+    </ClCompile>
+    <ClCompile Include="EffectView.cpp">
+      <Filter>Preview</Filter>
+    </ClCompile>
+    <ClCompile Include="DebugEffectView.cpp">
+      <Filter>Preview</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Application.h" />
@@ -345,6 +357,18 @@
       <Filter>Preview</Filter>
     </ClInclude>
     <ClInclude Include="ImageCrop.h">
+      <Filter>Preview</Filter>
+    </ClInclude>
+    <ClInclude Include="MinMax.h">
+      <Filter>Preview</Filter>
+    </ClInclude>
+    <ClInclude Include="Particle.h">
+      <Filter>Preview</Filter>
+    </ClInclude>
+    <ClInclude Include="EffectView.h">
+      <Filter>Preview</Filter>
+    </ClInclude>
+    <ClInclude Include="DebugEffectView.h">
       <Filter>Preview</Filter>
     </ClInclude>
   </ItemGroup>
