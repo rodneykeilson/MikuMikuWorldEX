@@ -272,3 +272,26 @@ timeline_time_signature,Timeline - Insert Time Signature
 timeline_hi_speed,Timeline - Insert Hi-Speed Change
 zoom_in,Zoom In
 zoom_out,Zoom Out
+
+fullscreen_preview,Fullscreen Preview
+preview_draw_toolbar,Show Preview Toolbar
+preview,Preview
+score_preview,Score Preview
+score_preview_full,Score Preview (Fullscreen)
+toggle_preview_fullscreen,Toggle Preview Fullscreen
+
+# preview settings
+notes_speed,Notes Speed
+mirror_score,Mirror Score
+notes_skin,Notes Skin
+flicks_animation,Flick Animation
+holds_animation,Hold Animation
+simultaneous_lines,Simultaneous Lines
+holds_alpha,Holds Opacity
+guides_alpha,Guides Opacity
+stage_opacity,Stage Opacity
+stage_cover,Stage Cover
+stage_lock_ratio,Lock Aspect Ratio
+visuals,Visuals
+Notes 01,Notes 01
+Notes 02,Notes 02

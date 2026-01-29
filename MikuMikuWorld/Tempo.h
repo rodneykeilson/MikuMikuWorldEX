@@ -41,4 +41,10 @@ namespace MikuMikuWorld
 	int findTimeSignature(int measure, const std::map<int, TimeSignature>& ts);
 	id_t findHighSpeedChange(int tick, const std::unordered_map<id_t, HiSpeedChange>& hiSpeeds,
 	                         int selectedLayer);
+
+	// MMWCC Preview: Layer-aware hi-speed accumulation with negative speed support
+	double accumulateScaledDuration(int tick, int ticksPerBeat, 
+		const std::vector<Tempo>& bpms, 
+		const std::unordered_map<id_t, HiSpeedChange>& hispeeds,
+		int noteLayer);
 }

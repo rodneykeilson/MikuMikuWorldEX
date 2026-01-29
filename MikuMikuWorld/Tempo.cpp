@@ -175,4 +175,45 @@ namespace MikuMikuWorld
 
 		return std::max(tick, 0);
 	}
+
+	// MMWCC Preview: Layer-aware hi-speed accumulation with negative speed support
+	double accumulateScaledDuration(int tick, int ticksPerBeat, 
+		const std::vector<Tempo>& bpms, 
+		const std::unordered_map<id_t, HiSpeedChange>& hispeeds,
+		int noteLayer)
+	{
+		// Build sorted list of hi-speeds for this note's layer
+		std::vector<HiSpeedChange> layerHiSpeeds;
+		for (auto& [id, hs] : hispeeds)
+		{
+			if (hs.layer == noteLayer)
+				layerHiSpeeds.push_back(hs);
+		}
+		std::sort(layerHiSpeeds.begin(), layerHiSpeeds.end(), 
+			[](const HiSpeedChange& a, const HiSpeedChange& b) { return a.tick < b.tick; });
+
+		int prvBpm = 0, prvSpd = -1;
+		int accTicks = 0;
+		double totalDuration = 0;
+
+		while (accTicks < tick)
+		{
+			int nxtBpmTick = prvBpm + 1 < static_cast<int>(bpms.size()) ? bpms[prvBpm + 1].tick : INT32_MAX;
+			int nxtSpdTick = prvSpd + 1 < static_cast<int>(layerHiSpeeds.size()) ? layerHiSpeeds[prvSpd + 1].tick : INT32_MAX;
+			int nxtTick = std::min({nxtBpmTick, nxtSpdTick, tick});
+
+			float currentBpm = bpms.at(prvBpm).bpm;
+			float currentSpd = prvSpd >= 0 ? layerHiSpeeds[prvSpd].speed : 1.0f;
+
+			// Negative speeds will correctly produce negative visual offsets
+			totalDuration += ticksToSec(nxtTick - accTicks, ticksPerBeat, currentBpm) * currentSpd;
+
+			if (nxtTick == nxtBpmTick)
+				prvBpm++;
+			if (nxtTick == nxtSpdTick)
+				prvSpd++;
+			accTicks = nxtTick;
+		}
+		return totalDuration;
+	}
 }
