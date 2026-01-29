@@ -367,6 +367,9 @@ namespace MikuMikuWorld::Effect
 
 	void EffectView::addEffect(EffectType effect, const Note& note, const ScoreContext& context, float time)
 	{
+		if (effectPools.find(effect) == effectPools.end())
+			return;
+
 		EffectPool& pool = effectPools[effect];
 		ParticleController& controller = pool.getNext();
 
@@ -433,6 +436,9 @@ namespace MikuMikuWorld::Effect
 
 	void EffectView::addAuraEffect(EffectType effect, const Note& note, const ScoreContext& context, float time)
 	{
+		if (effectPools.find(effect) == effectPools.end())
+			return;
+
 		if (effect == fx_note_hold_aura || effect == fx_note_critical_long_hold_gen_aura)
 		{
 			auto holdIt = context.score.holdNotes.find(note.ID);
@@ -468,6 +474,9 @@ namespace MikuMikuWorld::Effect
 
 	void EffectView::addLaneEffect(EffectType effect, const Note& note, const ScoreContext& context, float time)
 	{
+		if (effectPools.find(effect) == effectPools.end())
+			return;
+
 		EffectPool& pool = effectPools[effect];
 		for (int i = static_cast<int>(note.lane); i < static_cast<int>(note.lane + note.width); i++)
 		{
@@ -483,7 +492,11 @@ namespace MikuMikuWorld::Effect
 	{
 		for (size_t i = 0; i < fx_note_hold_aura; i++)
 		{
-			for (auto& controller : effectPools[static_cast<EffectType>(i)].pool)
+			EffectType type = static_cast<EffectType>(i);
+			if (effectPools.find(type) == effectPools.end())
+				continue;
+
+			for (auto& controller : effectPools[type].pool)
 			{
 				if (!controller.active)
 					continue;
@@ -494,7 +507,11 @@ namespace MikuMikuWorld::Effect
 
 		for (size_t i = fx_note_hold_aura; i < fx_count; i++)
 		{
-			for (auto& controller : effectPools[static_cast<EffectType>(i)].pool)
+			EffectType type = static_cast<EffectType>(i);
+			if (effectPools.find(type) == effectPools.end())
+				continue;
+
+			for (auto& controller : effectPools[type].pool)
 			{
 				if (time >= controller.time.max)
 					controller.active = false;
@@ -541,6 +558,9 @@ namespace MikuMikuWorld::Effect
 
 		for (auto& effect : underNoteEffects)
 		{
+			if (effectPools.find(effect) == effectPools.end())
+				continue;
+
 			for (auto& controller : effectPools[effect].pool)
 			{
 				if (controller.active)
@@ -554,7 +574,11 @@ namespace MikuMikuWorld::Effect
 		std::vector<ParticleController*> drawingControllers;
 		for (int i = 3; i < fx_count; i++)
 		{
-			for (auto& controller : effectPools[static_cast<EffectType>(i)].pool)
+			EffectType type = static_cast<EffectType>(i);
+			if (effectPools.find(type) == effectPools.end())
+				continue;
+
+			for (auto& controller : effectPools[type].pool)
 			{
 				if (controller.active)
 					drawingControllers.push_back(&controller);
