@@ -48,17 +48,32 @@ namespace MikuMikuWorld::Effect
 
 	static std::pair<float, float> getHoldSegmentBound(const Note& note, const Score& score, int curTick)
 	{
-		const HoldNote& holdNotes = score.holdNotes.at(note.ID);
-		auto curStepIt = std::lower_bound(holdNotes.steps.begin(), holdNotes.steps.end(), curTick, [&score](const HoldStep& step, int tick) { return score.notes.at(step.ID).tick < tick; });
+		auto holdIt = score.holdNotes.find(note.ID);
+		if (holdIt == score.holdNotes.end())
+			return getNoteBound(note, config.pvMirrorScore);
+		const HoldNote& holdNotes = holdIt->second;
+		
+		auto curStepIt = std::lower_bound(holdNotes.steps.begin(), holdNotes.steps.end(), curTick, 
+			[&score](const HoldStep& step, int tick) { 
+				auto it = score.notes.find(step.ID);
+				return it != score.notes.end() && it->second.tick < tick; 
+			});
 		auto startStepIt = std::find_if(std::make_reverse_iterator(curStepIt), holdNotes.steps.rend(), std::mem_fn(&HoldStep::canEase));
 		const HoldStep& startHoldStep = startStepIt == holdNotes.steps.rend() ? holdNotes.start : *startStepIt;
 
-		const Note& startNote = startStepIt == holdNotes.steps.rend() ? note : score.notes.at(startStepIt->ID);
+		auto startNoteIt = startStepIt == holdNotes.steps.rend() ? score.notes.find(note.ID) : score.notes.find(startStepIt->ID);
+		if (startNoteIt == score.notes.end())
+			return getNoteBound(note, config.pvMirrorScore);
+		const Note& startNote = startNoteIt->second;
 		if (startNote.tick == curTick) return getNoteBound(startNote, config.pvMirrorScore);
 		auto [leftStart, rightStart] = getNoteBound(startNote, config.pvMirrorScore);
 
 		auto end = std::find_if(curStepIt, holdNotes.steps.end(), std::mem_fn(&HoldStep::canEase));
-		const Note& endNote = score.notes.at(end == holdNotes.steps.end() ? holdNotes.end : end->ID);
+		id_t endNoteId = end == holdNotes.steps.end() ? holdNotes.end : end->ID;
+		auto endNoteIt = score.notes.find(endNoteId);
+		if (endNoteIt == score.notes.end())
+			return getNoteBound(note, config.pvMirrorScore);
+		const Note& endNote = endNoteIt->second;
 		if (endNote.tick == curTick) return getNoteBound(endNote, config.pvMirrorScore);
 		auto [leftStop, rightStop] = getNoteBound(endNote, config.pvMirrorScore);
 		auto easeFunc = getEaseFunction(startHoldStep.ease);
@@ -76,8 +91,13 @@ namespace MikuMikuWorld::Effect
 
 	static std::pair<float, float> getHoldStepBound(const Note& note, const Score& score)
 	{
-		auto& holdNotes = score.holdNotes.at(note.parentID);
+		auto holdIt = score.holdNotes.find(note.parentID);
+		if (holdIt == score.holdNotes.end())
+			return getNoteBound(note, config.pvMirrorScore);
+		const HoldNote& holdNotes = holdIt->second;
 		int curStepIdx = findHoldStep(holdNotes, note.ID);
+		if (curStepIdx < 0 || curStepIdx >= static_cast<int>(holdNotes.steps.size()))
+			return getNoteBound(note, config.pvMirrorScore);
 		if (holdNotes.steps[curStepIdx].canEase())
 			return getNoteBound(note, config.pvMirrorScore);
 
@@ -87,11 +107,18 @@ namespace MikuMikuWorld::Effect
 		const HoldStep& lastHoldStep = startStepIdx != 0 ? holdNotes.steps[startStepIdx - 1] : holdNotes.start;
 		auto easeFunc = getEaseFunction(lastHoldStep.ease);
 
-		const Note& startNote = score.notes.at(lastHoldStep.ID);
+		auto startNoteIt = score.notes.find(lastHoldStep.ID);
+		if (startNoteIt == score.notes.end())
+			return getNoteBound(note, config.pvMirrorScore);
+		const Note& startNote = startNoteIt->second;
 		auto [leftStart, rightStart] = getNoteBound(startNote, config.pvMirrorScore);
 
 		auto it = std::find_if(holdNotes.steps.begin() + curStepIdx, holdNotes.steps.end(), std::mem_fn(&HoldStep::canEase));
-		const Note& endNote = score.notes.at(it == holdNotes.steps.end() ? holdNotes.end : it->ID);
+		id_t endNoteId = it == holdNotes.steps.end() ? holdNotes.end : it->ID;
+		auto endNoteIt = score.notes.find(endNoteId);
+		if (endNoteIt == score.notes.end())
+			return getNoteBound(note, config.pvMirrorScore);
+		const Note& endNote = endNoteIt->second;
 		auto [leftStop, rightStop] = getNoteBound(endNote, config.pvMirrorScore);
 
 		float start_tm = accumulateDuration(startNote.tick, TICKS_PER_BEAT, score.tempoChanges);
@@ -224,6 +251,10 @@ namespace MikuMikuWorld::Effect
 
 	void EffectView::addNoteEffects(const Note& note, const ScoreContext& context, float time)
 	{
+		// Skip damage notes - they don't have standard effects
+		if (note.getType() == NoteType::Damage)
+			return;
+
 		if (note.friction)
 		{
 			EffectType traceEffect{ fx_count };
@@ -265,7 +296,10 @@ namespace MikuMikuWorld::Effect
 
 		if (note.getType() == NoteType::Hold)
 		{
-			const HoldNote& hold = context.score.holdNotes.at(note.ID);
+			auto holdIt = context.score.holdNotes.find(note.ID);
+			if (holdIt == context.score.holdNotes.end())
+				return;
+			const HoldNote& hold = holdIt->second;
 			if (hold.isGuide())
 				return;
 
@@ -285,8 +319,14 @@ namespace MikuMikuWorld::Effect
 		}
 		else if (note.getType() == NoteType::HoldMid)
 		{
-			const HoldNote& hold = context.score.holdNotes.at(note.parentID);
-			const HoldStep& step = hold.steps[findHoldStep(hold, note.ID)];
+			auto holdIt = context.score.holdNotes.find(note.parentID);
+			if (holdIt == context.score.holdNotes.end())
+				return;
+			const HoldNote& hold = holdIt->second;
+			int stepIdx = findHoldStep(hold, note.ID);
+			if (stepIdx < 0 || stepIdx >= static_cast<int>(hold.steps.size()))
+				return;
+			const HoldStep& step = hold.steps[stepIdx];
 
 			if (step.type == HoldStepType::Hidden)
 				return;
@@ -295,7 +335,10 @@ namespace MikuMikuWorld::Effect
 		}
 		else if (note.getType() == NoteType::HoldEnd)
 		{
-			const HoldNote& hold = context.score.holdNotes.at(note.parentID);
+			auto holdIt = context.score.holdNotes.find(note.parentID);
+			if (holdIt == context.score.holdNotes.end())
+				return;
+			const HoldNote& hold = holdIt->second;
 			if (hold.isGuide())
 				return;
 
@@ -350,8 +393,13 @@ namespace MikuMikuWorld::Effect
 		}
 		else if (effect == fx_note_critical_long_hold_via_aura || effect == fx_note_long_hold_via_aura)
 		{
-			const HoldNote& hold = context.score.holdNotes.at(note.parentID);
-			const HoldStep& step = hold.steps[findHoldStep(hold, note.ID)];
+			auto holdIt = context.score.holdNotes.find(note.parentID);
+			if (holdIt == context.score.holdNotes.end())
+				return;
+			const HoldNote& hold = holdIt->second;
+			int stepIdx = findHoldStep(hold, note.ID);
+			if (stepIdx < 0 || stepIdx >= static_cast<int>(hold.steps.size()))
+				return;
 
 			float noteLeft{}, noteRight{};
 			std::tie(noteLeft, noteRight) = getHoldStepBound(note, context.score);
@@ -360,9 +408,15 @@ namespace MikuMikuWorld::Effect
 		}
 		else if (effect == fx_note_critical_long_hold_gen || effect == fx_note_long_hold_gen)
 		{
-			const HoldNote& holdNote = context.score.holdNotes.at(note.ID);
+			auto holdIt = context.score.holdNotes.find(note.ID);
+			if (holdIt == context.score.holdNotes.end())
+				return;
+			const HoldNote& holdNote = holdIt->second;
+			auto endIt = context.score.notes.find(holdNote.end);
+			if (endIt == context.score.notes.end())
+				return;
 			start = accumulateDuration(note.tick, TICKS_PER_BEAT, context.score.tempoChanges);
-			end = accumulateDuration(context.score.notes.at(holdNote.end).tick, TICKS_PER_BEAT, context.score.tempoChanges);
+			end = accumulateDuration(endIt->second.tick, TICKS_PER_BEAT, context.score.tempoChanges);
 			if (abs(end - start) < 0.01f)
 				return;
 
@@ -381,9 +435,15 @@ namespace MikuMikuWorld::Effect
 	{
 		if (effect == fx_note_hold_aura || effect == fx_note_critical_long_hold_gen_aura)
 		{
-			const HoldNote& holdNote = context.score.holdNotes.at(note.ID);
+			auto holdIt = context.score.holdNotes.find(note.ID);
+			if (holdIt == context.score.holdNotes.end())
+				return;
+			const HoldNote& holdNote = holdIt->second;
+			auto endIt = context.score.notes.find(holdNote.end);
+			if (endIt == context.score.notes.end())
+				return;
 			float start = accumulateDuration(note.tick, TICKS_PER_BEAT, context.score.tempoChanges);
-			float end = accumulateDuration(context.score.notes.at(holdNote.end).tick, TICKS_PER_BEAT, context.score.tempoChanges);
+			float end = accumulateDuration(endIt->second.tick, TICKS_PER_BEAT, context.score.tempoChanges);
 			if (abs(end - start) < 0.01f)
 				return;
 
@@ -398,7 +458,7 @@ namespace MikuMikuWorld::Effect
 		}
 
 		EffectPool& pool = effectPools[effect];
-		for (int i = note.lane; i < note.lane + note.width; i++)
+		for (int i = static_cast<int>(note.lane); i < static_cast<int>(note.lane + note.width); i++)
 		{
 			ParticleController& controller = pool.getNext();
 			controller.worldOffset.position = DirectX::XMVectorSetX(controller.worldOffset.position, getEffectXPos(i, 1, config.pvMirrorScore));
@@ -409,8 +469,10 @@ namespace MikuMikuWorld::Effect
 	void EffectView::addLaneEffect(EffectType effect, const Note& note, const ScoreContext& context, float time)
 	{
 		EffectPool& pool = effectPools[effect];
-		for (int i = note.lane; i < note.lane + note.width; i++)
+		for (int i = static_cast<int>(note.lane); i < static_cast<int>(note.lane + note.width); i++)
 		{
+			if (i < 0 || i >= static_cast<int>(pool.pool.size()))
+				continue;
 			ParticleController& controller = pool.pool[i];
 			controller.worldOffset.position = DirectX::XMVectorSetX(controller.worldOffset.position, getEffectXPos(i, 1, config.pvMirrorScore));
 			controller.play(note, time, -1);
@@ -440,8 +502,15 @@ namespace MikuMikuWorld::Effect
 				if (!controller.active)
 					continue;
 
+				auto noteIt = context.score.notes.find(controller.refID);
+				if (noteIt == context.score.notes.end())
+				{
+					controller.active = false;
+					continue;
+				}
+
 				float noteLeft{}, noteRight{};
-				std::tie(noteLeft, noteRight) = getHoldSegmentBound(context.score.notes.at(controller.refID), context.score, context.currentTick);
+				std::tie(noteLeft, noteRight) = getHoldSegmentBound(noteIt->second, context.score, context.currentTick);
 
 				if (static_cast<EffectType>(i) == fx_note_hold_aura ||
 					static_cast<EffectType>(i) == fx_note_critical_long_hold_gen_aura)
