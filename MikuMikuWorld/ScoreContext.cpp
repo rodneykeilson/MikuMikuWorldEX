@@ -1378,6 +1378,7 @@ namespace MikuMikuWorld
 			upToDate = false;
 
 			scoreStats.calculateStats(score);
+			scorePreviewDrawData.calculateDrawData(score);
 		}
 	}
 
@@ -1395,6 +1396,7 @@ namespace MikuMikuWorld
 			upToDate = false;
 
 			scoreStats.calculateStats(score);
+			scorePreviewDrawData.calculateDrawData(score);
 		}
 	}
 
@@ -1406,6 +1408,7 @@ namespace MikuMikuWorld
 		                                                : windowUntitled) +
 		                   "*");
 		scoreStats.calculateStats(score);
+		scorePreviewDrawData.calculateDrawData(score);
 
 		upToDate = false;
 	}

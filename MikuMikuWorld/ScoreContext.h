@@ -8,6 +8,7 @@
 #include "Score.h"
 #include "ScoreStats.h"
 #include "TimelineMode.h"
+#include "PreviewData.h"
 #include <unordered_set>
 
 namespace MikuMikuWorld
@@ -88,6 +89,8 @@ namespace MikuMikuWorld
 
 		int selectedLayer = 0;
 		bool showAllLayers = false;
+
+		Engine::DrawData scorePreviewDrawData;
 
 		bool hasSelection() const
 		{

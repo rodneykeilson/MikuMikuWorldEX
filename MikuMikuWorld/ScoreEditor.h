@@ -1,4 +1,5 @@
 #include "ScoreEditorWindows.h"
+#include "ScorePreview.h"
 #include <future>
 
 namespace MikuMikuWorld
@@ -12,6 +13,7 @@ namespace MikuMikuWorld
 		PresetManager presetManager;
 
 		ScoreEditorTimeline timeline{};
+		ScorePreviewWindow preview{};
 		ScorePropertiesWindow propertiesWindow{};
 		ScoreNotePropertiesWindow notePropertiesWindow{};
 		ScoreOptionsWindow optionsWindow{};
@@ -60,5 +62,7 @@ namespace MikuMikuWorld
 		void uninitialize();
 		inline std::string_view getWorkingFilename() const { return context.workingData.filename; }
 		constexpr inline bool isUpToDate() const { return context.upToDate; }
+
+		inline bool isFullScreenPreview() const { return preview.isFullWindow(); }
 	};
 }

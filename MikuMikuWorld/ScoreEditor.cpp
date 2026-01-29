@@ -1,7 +1,7 @@
 // Put httplib first otherwise the compiler will throw an error
 #include <corecrt_math.h>
 #define CPPHTTPLIB_OPENSSL_SUPPORT 1
-#include <cpp-httplib/httplib.h>
+// #include <cpp-httplib/httplib.h> // TODO: cpp-httplib not available in MMWCC yet
 
 #include "Application.h"
 #include "ApplicationConfiguration.h"
@@ -16,6 +16,7 @@
 #include <Windows.h>
 #include <filesystem>
 #include <fstream>
+#include <iostream>
 
 using nlohmann::json;
 
@@ -51,26 +52,29 @@ namespace MikuMikuWorld
 		autoSavePath = Application::getAppDir() + "auto_save";
 		autoSaveTimer.reset();
 
-		std::thread fetchUpdateThread(
-		    [this]
+#ifdef CPPHTTPLIB_OPENSSL_SUPPORT
+	std::thread fetchUpdateThread(
+	    [this]
+	    {
+		    try
 		    {
-			    try
-			    {
-				    ScoreEditor::fetchUpdate();
-			    }
-			    catch (const std::exception& e)
-			    {
-				    std::cout << "Failed to fetch latest update: " << e.what() << std::endl;
-			    }
-		    });
+			    ScoreEditor::fetchUpdate();
+		    }
+		    catch (const std::exception& e)
+		    {
+			    std::cout << "Failed to fetch latest update: " << e.what() << std::endl;
+		    }
+	    });
 
-		fetchUpdateThread.detach();
-	}
+	fetchUpdateThread.detach();
+#endif
+}
 
-	void ScoreEditor::fetchUpdate()
-	{
+void ScoreEditor::fetchUpdate()
+{
+#ifdef CPPHTTPLIB_HTTPLIB_H // Only compile if httplib is available
 
-		std::wstring updateFlagPath =
+	std::wstring updateFlagPath =
 		    IO::mbToWideStr(Application::getAppDir() + "latest_version.txt");
 		bool shouldFetchUpdate = true;
 		std::string latestVersionString;
@@ -143,15 +147,11 @@ namespace MikuMikuWorld
 		}
 
 		std::cout << "No update" << std::endl;
-	}
+#endif // CPPHTTPLIB_HTTPLIB_H
+}
 
-	void ScoreEditor::writeSettings()
-	{
-		config.masterVolume = context.audio.getMasterVolume();
-		config.bgmVolume = context.audio.getMusicVolume();
-		config.seVolume = context.audio.getSoundEffectsVolume();
-
-		config.division = timeline.getDivision();
+void ScoreEditor::writeSettings()
+{
 		config.zoom = timeline.getZoom();
 	}
 
@@ -238,15 +238,20 @@ namespace MikuMikuWorld
 				context.splitHoldInSelection();
 			if (ImGui::IsAnyPressed(config.input.lerpHiSpeeds))
 				context.lerpHiSpeeds(timeline.getDivision(), EaseType::Linear);
+			if (ImGui::IsAnyPressed(config.input.togglePreviewFullWindow, false))
+				preview.setFullWindow(!preview.isFullWindow());
 
 			for (int i = 0; i < (int)TimelineMode::TimelineModeMax; ++i)
 				if (ImGui::IsAnyPressed(*timelineModeBindings[i]))
 					timeline.changeMode((TimelineMode)i, edit);
 		}
 
-		timeline.laneWidth = config.timelineWidth;
-		timeline.notesHeight =
-		    config.matchNotesSizeToTimeline ? config.timelineWidth : config.notesHeight;
+		if (!preview.isFullWindow())
+		{
+			timeline.laneWidth = config.timelineWidth;
+			timeline.notesHeight =
+			    config.matchNotesSizeToTimeline ? config.timelineWidth : config.notesHeight;
+		}
 
 		if (config.backgroundBrightness != timeline.background.getBrightness())
 			timeline.background.setBrightness(config.backgroundBrightness);
@@ -290,10 +295,42 @@ namespace MikuMikuWorld
 		aboutDialog.update();
 		updateAvailableDialog.update();
 
-		ImGui::Begin(IMGUI_TITLE(ICON_FA_MUSIC, "notes_timeline"), NULL,
-		             ImGuiWindowFlags_Static | ImGuiWindowFlags_NoScrollbar |
-		                 ImGuiWindowFlags_NoScrollWithMouse);
-		timeline.update(context, edit, renderer.get());
+		if (!isFullScreenPreview())
+		{
+			ImGui::Begin(IMGUI_TITLE(ICON_FA_MUSIC, "notes_timeline"), NULL,
+			             ImGuiWindowFlags_Static | ImGuiWindowFlags_NoScrollbar |
+			                 ImGuiWindowFlags_NoScrollWithMouse);
+			timeline.update(context, edit, renderer.get());
+			ImGui::End();
+		}
+
+		// Preview window
+		ImGuiWindowFlags previewWindowFlags =
+			ImGuiWindowFlags_NoCollapse |
+			ImGuiWindowFlags_NoScrollbar |
+			ImGuiWindowFlags_NoScrollWithMouse;
+
+		if (isFullScreenPreview())
+		{
+			ImGuiViewport* viewport = ImGui::GetMainViewport();
+			ImGui::SetNextWindowPos(viewport->WorkPos);
+			ImGui::SetNextWindowSize(viewport->WorkSize);
+			ImGui::SetNextWindowViewport(viewport->ID);
+			previewWindowFlags |= ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoResize;
+
+			ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0);
+			ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, { 0, 0 });
+
+			ImGui::Begin(IMGUI_TITLE(ICON_FA_OBJECT_GROUP, "score_preview_full"), NULL, previewWindowFlags);
+			ImGui::PopStyleVar(2);
+		}
+		else
+		{
+			ImGui::Begin(IMGUI_TITLE(ICON_FA_OBJECT_GROUP, "score_preview"), NULL, previewWindowFlags);
+		}
+
+		preview.update(context, renderer.get());
+		preview.updateUI(timeline, context);
 		ImGui::End();
 
 		if (config.debugEnabled)
@@ -424,6 +461,7 @@ namespace MikuMikuWorld
 			context.audio.setMusicOffset(0, context.workingData.musicOffset);
 
 			context.scoreStats.calculateStats(context.score);
+			context.scorePreviewDrawData.calculateDrawData(context.score);
 			timeline.calculateMaxOffsetFromScore(context.score);
 
 			UI::setWindowTitle((context.workingData.filename.size()
@@ -801,6 +839,14 @@ namespace MikuMikuWorld
 				glfwSwapInterval(config.vsync);
 
 			ImGui::MenuItem(getString("show_fps"), NULL, &config.showFPS);
+
+			ImGui::Separator();
+
+			ImGui::MenuItem(getString("preview_draw_toolbar"), NULL, &config.pvDrawToolbar);
+			
+			bool isPreviewFullScreen = isFullScreenPreview();
+			if (ImGui::MenuItem(getString("fullscreen_preview"), ToShortcutString(config.input.togglePreviewFullWindow), &isPreviewFullScreen))
+				preview.setFullWindow(isPreviewFullScreen);
 
 			ImGui::EndMenu();
 		}

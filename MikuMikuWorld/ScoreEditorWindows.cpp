@@ -3,6 +3,7 @@
 #include "ApplicationConfiguration.h"
 #include "Constants.h"
 #include "File.h"
+#include "NoteSkin.h"
 #include "NoteTypes.h"
 #include "ScoreContext.h"
 #include "UI.h"
@@ -1530,6 +1531,88 @@ namespace MikuMikuWorld
 						UI::endPropertyColumns();
 					}
 
+					ImGui::EndTabItem();
+				}
+
+				if (ImGui::BeginTabItem(IMGUI_TITLE("", "preview")))
+				{
+					if (ImGui::CollapsingHeader(getString("general"), ImGuiTreeNodeFlags_DefaultOpen))
+					{
+						UI::beginPropertyColumns();
+						UI::addSliderProperty(getString("notes_speed"), config.pvNoteSpeed, 1, 12, "%.2f");
+						UI::addCheckboxProperty(getString("mirror_score"), config.pvMirrorScore);
+						UI::addCheckboxProperty(getString("preview_draw_toolbar"), config.pvDrawToolbar);
+						UI::endPropertyColumns();
+					}
+
+					if (ImGui::CollapsingHeader(getString("background"), ImGuiTreeNodeFlags_DefaultOpen))
+					{
+						UI::beginPropertyColumns();
+						UI::addCheckboxProperty(getString("draw_background"), config.drawBackground);
+
+						std::string backgroundFile = config.backgroundImage;
+						int result = UI::addFileProperty(getString("background_image"), backgroundFile);
+						if (result == 1)
+						{
+							config.backgroundImage = backgroundFile;
+							isBackgroundChangePending = true;
+						}
+						else if (result == 2)
+						{
+							IO::FileDialog fileDialog{};
+							fileDialog.title = "Open Image File";
+							fileDialog.filters = { IO::imageFilter, IO::allFilter };
+							fileDialog.parentWindowHandle = Application::windowState.windowHandle;
+
+							if (fileDialog.openFile() == IO::FileDialogResult::OK)
+							{
+								config.backgroundImage = fileDialog.outputFilename;
+								isBackgroundChangePending = true;
+							}
+						}
+
+						UI::addPercentSliderProperty(getString("background_brightnes"), config.pvBackgroundBrightness);
+						ImGui::Separator();
+
+						UI::addPercentSliderProperty(getString("stage_opacity"), config.pvStageOpacity);
+						UI::addPercentSliderProperty(getString("stage_cover"), config.pvStageCover);
+						UI::addCheckboxProperty(getString("stage_lock_ratio"), config.pvLockAspectRatio);
+						UI::endPropertyColumns();
+					}
+
+					if (ImGui::CollapsingHeader(getString("visuals"), ImGuiTreeNodeFlags_DefaultOpen))
+					{
+						const std::vector<std::string>& noteSkinNames = noteSkins.getSkinNames();
+
+						ImGui::Text(getString("notes_skin"));
+						if (noteSkins.count() > 1)
+						{
+							if (ImGui::RadioButton(getString(noteSkinNames[0]), config.notesSkin == 0))
+								config.notesSkin = 0;
+
+							const char* noteSkinName1 = getString(noteSkinNames[1]);
+							ImGui::SameLine();
+							if (ImGui::RadioButton(noteSkinName1, config.notesSkin == 1))
+								config.notesSkin = 1;
+						}
+
+						UI::beginPropertyColumns();
+						UI::addCheckboxProperty(getString("flicks_animation"), config.pvFlickAnimation);
+						UI::addCheckboxProperty(getString("holds_animation"), config.pvHoldAnimation);
+						UI::addCheckboxProperty(getString("simultaneous_lines"), config.pvSimultaneousLine);
+						ImGui::Separator();
+
+						float hold_alpha = config.pvHoldAlpha * 100.f;
+						UI::addSliderProperty(getString("holds_alpha"), hold_alpha, 10, 100, "%.0f%%");
+						config.pvHoldAlpha = hold_alpha / 100.f;
+
+						float guide_alpha = config.pvGuideAlpha * 100.f;
+						UI::addSliderProperty(getString("guides_alpha"), guide_alpha, 10, 100, "%.0f%%");
+						config.pvGuideAlpha = guide_alpha / 100.f;
+						
+						UI::endPropertyColumns();
+					}
+					
 					ImGui::EndTabItem();
 				}
 
