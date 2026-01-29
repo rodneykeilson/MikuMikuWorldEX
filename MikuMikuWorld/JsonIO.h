@@ -49,6 +49,19 @@ namespace jsonIO
 		return c;
 	}
 
+	static mmw::Vector3 tryGetValue(const nlohmann::json& js, const char* key, mmw::Vector3 def)
+	{
+		mmw::Vector3 v = def;
+		if (keyExists(js, key))
+		{
+			v.x = tryGetValue<float>(js[key], "x", def.x);
+			v.y = tryGetValue<float>(js[key], "y", def.y);
+			v.z = tryGetValue<float>(js[key], "z", def.z);
+		}
+
+		return v;
+	}
+
 	mmw::Note jsonToNote(const nlohmann::json& data, mmw::NoteType type);
 
 	nlohmann::json noteToJson(const mmw::Note& note);
