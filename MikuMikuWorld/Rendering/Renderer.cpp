@@ -148,7 +148,7 @@ namespace MikuMikuWorld
 		{
 			q.vertices[i].position = pos[i];
 			q.vertices[i].color = col;
-			q.vertices[i].uv = uvCoords[i];
+			q.vertices[i].uv = uv[i];  // FIX: Use passed uv parameter, not member uvCoords
 		}
 
 		quads.push_back(q);
@@ -214,5 +214,37 @@ namespace MikuMikuWorld
 		vBuffer.flushBuffer();
 
 		batchStarted = false;
+	}
+
+	void Renderer::endBatchWithDepthTest(int depthFunc)
+	{
+		// MMW compatibility - MMWCC doesn't use depth testing the same way
+		// Just call regular endBatch for now
+		endBatch();
+	}
+	
+	void Renderer::pushQuadMasked(const std::array<DirectX::XMVECTOR, 4>& pos,
+	                              const std::array<DirectX::XMVECTOR, 4>& uv,
+	                              const std::array<DirectX::XMVECTOR, 4>& mask,
+	                              const DirectX::XMVECTOR& col, int tex, int maskTex)
+	{
+		// MMW compatibility - simplified version ignoring masking
+		// Just render as a regular quad, using the passed UV coordinates
+		Quad q;
+		q.matrix = DirectX::XMMatrixIdentity();
+		q.texture = tex;
+		q.zIndex = 0;
+		for (int i = 0; i < 4; ++i)
+		{
+			q.vertices[i].position = pos[i];
+			q.vertices[i].color = col;
+			q.vertices[i].uv = uv[i];  // Use passed uv parameter
+		}
+
+		quads.push_back(q);
+
+		++numQuads;
+		numVertices += 4;
+		numIndices += 6;
 	}
 }

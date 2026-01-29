@@ -55,12 +55,19 @@ namespace MikuMikuWorld
 		void pushQuad(const std::array<DirectX::XMVECTOR, 4>& pos,
 		              const std::array<DirectX::XMVECTOR, 4>& uv, const DirectX::XMMATRIX& m,
 		              const DirectX::XMVECTOR& col, int tex, int z);
+	
+	// MMW compatibility - masked quad rendering (simplified - ignores masking)
+	void pushQuadMasked(const std::array<DirectX::XMVECTOR, 4>& pos,
+	                    const std::array<DirectX::XMVECTOR, 4>& uv,
+	                    const std::array<DirectX::XMVECTOR, 4>& mask,
+	                    const DirectX::XMVECTOR& col, int tex, int maskTex);
 
-		void bindTexture(int tex);
-		void beginBatch();
-		void endBatch();
+	void bindTexture(int tex);
+	void beginBatch();
+	void endBatch();
+	void endBatchWithDepthTest(int depthFunc); // MMW compatibility
 
-		inline int getNumVertices() const { return numBatchVertices; }
-		inline int getNumQuads() const { return numBatchQuads; }
+	inline int getNumVertices() const { return numBatchVertices; }
+	inline int getNumQuads() const { return numBatchQuads; }
 	};
 }

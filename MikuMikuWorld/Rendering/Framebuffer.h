@@ -19,7 +19,9 @@ namespace MikuMikuWorld
 		Framebuffer();
 
 		void clear();
+	void clear(float r, float g, float b, float a); // MMW compatibility - clear with color
 		void bind();
+		void unblind(); // MMW compatibility - unbind framebuffer
 		void dispose();
 		void resize(unsigned int w, unsigned int h);
 

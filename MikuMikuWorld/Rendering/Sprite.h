@@ -15,6 +15,10 @@ namespace MikuMikuWorld
 		float getX() const;
 		float getY() const;
 		float getWidth() const;
-		float getHeight() const;
-	};
+		float getHeight() const;		
+		// Compatibility methods for MMW-style API
+		inline float getX1() const { return x; }
+		inline float getY1() const { return y; }
+		inline float getX2() const { return x + width; }
+		inline float getY2() const { return y + height; }	};
 }

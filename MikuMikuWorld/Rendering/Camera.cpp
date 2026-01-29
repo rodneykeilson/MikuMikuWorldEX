@@ -21,4 +21,9 @@ namespace MikuMikuWorld
 	{
 		return DirectX::XMMatrixLookAtRH(position, target, up);
 	}
+
+	DirectX::XMMATRIX Camera::getOffCenterOrthographicProjectionStatic(float xmin, float xmax, float ymin, float ymax)
+	{
+		return DirectX::XMMatrixOrthographicOffCenterRH(xmin, xmax, ymin, ymax, 0.001f, 100.0f);
+	}
 }

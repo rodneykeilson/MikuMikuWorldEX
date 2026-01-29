@@ -21,11 +21,23 @@ namespace MikuMikuWorld
 		glClearColor(0.2, 0.2, 0.2, 0.0);
 		glClear(clearBits);
 	}
+	
+	void Framebuffer::clear(float r, float g, float b, float a)
+	{
+		GLbitfield clearBits = GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT;
+		glClearColor(r, g, b, a);
+		glClear(clearBits);
+	}
 
 	void Framebuffer::bind()
 	{
 		glBindFramebuffer(GL_FRAMEBUFFER, fbo);
 		glViewport(0, 0, width, height);
+	}
+	void Framebuffer::unblind()
+	{
+		// MMW compatibility - unbind framebuffer and restore default viewport
+		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	}
 
 	void Framebuffer::dispose()
