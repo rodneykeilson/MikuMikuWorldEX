@@ -94,6 +94,11 @@ namespace MikuMikuWorld
 		id_t ID;
 		HoldStepType type;
 		EaseType ease;
+
+		inline bool canEase() const
+		{
+			return type != HoldStepType::Skip;
+		}
 	};
 
 	class HoldNote

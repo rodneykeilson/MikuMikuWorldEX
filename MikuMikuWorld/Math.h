@@ -21,6 +21,25 @@ namespace MikuMikuWorld
 		Vector2 operator*(const Vector2& v) { return Vector2(x * v.x, y * v.y); }
 	};
 
+	struct Vector3
+	{
+		float x;
+		float y;
+		float z;
+
+		Vector3(float _x, float _y, float _z) : x{ _x }, y{ _y }, z{ _z } {}
+
+		Vector3() : x{ 0 }, y{ 0 }, z{ 0 } {}
+
+		Vector3 operator+(const Vector3& v) const { return Vector3(x + v.x, y + v.y, z + v.z); }
+
+		Vector3 operator-(const Vector3& v) const { return Vector3(x - v.x, y - v.y, z - v.z); }
+
+		Vector3 operator*(const Vector3& v) const { return Vector3(x * v.x, y * v.y, z * v.z); }
+
+		Vector3 operator*(float s) const { return Vector3(x * s, y * s, z * s); }
+	};
+
 	struct Color
 	{
 	  public:
@@ -36,7 +55,7 @@ namespace MikuMikuWorld
 			return r == c.r && g == c.g && b == c.b && a == c.a;
 		}
 		inline bool operator!=(const Color& c) { return !(*this == c); }
-		inline Color operator*(const Color& c)
+		inline Color operator*(const Color& c) const
 		{
 			return Color{ r * c.r, g * c.g, b * c.b, a * c.a };
 		}

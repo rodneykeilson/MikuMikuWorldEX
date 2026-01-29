@@ -152,18 +152,26 @@ namespace MikuMikuWorld::Effect
 		const float currentTick = context.currentTick;
 		const float currentTime = context.getTimeAtCurrentTick();
 
-		for (auto it = context.score.notes.rbegin(); it != context.score.notes.rend(); it++)
+		// Note: unordered_map doesn't have rbegin/rend, so iterate normally
+		for (const auto& [id, note] : context.score.notes)
 		{
-			const auto& [id, note] = *it;
 			if (isNoteEffectPlayed(id))
 				continue;
 
 			bool isMidHold = false;
 			if (note.getType() == NoteType::Hold)
 			{
-				const HoldNote& hold = context.score.holdNotes.at(note.ID);
-				const Note& end = context.score.notes.at(hold.end);
-				isMidHold = !hold.isGuide() && isWithinRange(currentTick, note.tick, end.tick);
+				auto holdIt = context.score.holdNotes.find(note.ID);
+				if (holdIt != context.score.holdNotes.end())
+				{
+					const HoldNote& hold = holdIt->second;
+					auto endIt = context.score.notes.find(hold.end);
+					if (endIt != context.score.notes.end())
+					{
+						const Note& end = endIt->second;
+						isMidHold = !hold.isGuide() && isWithinRange(currentTick, note.tick, end.tick);
+					}
+				}
 			}
 
 			float noteTime = accumulateDuration(note.tick, TICKS_PER_BEAT, context.score.tempoChanges);
