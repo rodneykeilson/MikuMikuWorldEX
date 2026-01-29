@@ -349,6 +349,9 @@ std::array<DirectX::XMFLOAT4, 4> ScorePreviewBackground::DefaultJacket::getRight
 		if (config.drawBackground && background.shouldUpdate(context.workingData.jacket))
 			background.update(renderer, context.workingData.jacket);
 
+		// Temporarily disable particle effects to prevent crashes
+		// TODO: Fix remaining map key issues in EffectView
+		/*
 		if (!context.scorePreviewDrawData.effectView.isInitialized())
 			context.scorePreviewDrawData.effectView.init();
 
@@ -359,6 +362,7 @@ std::array<DirectX::XMFLOAT4, 4> ScorePreviewBackground::DefaultJacket::getRight
 
 			context.scorePreviewDrawData.effectView.update(context);
 		}
+		*/
 
 		static int shaderId = ResourceManager::getShader("basic2d");
 		static int pteShaderId = ResourceManager::getShader("particles");
@@ -404,7 +408,8 @@ std::array<DirectX::XMFLOAT4, 4> ScorePreviewBackground::DefaultJacket::getRight
 		drawStage(renderer);
 		renderer->endBatch();
 
-		context.scorePreviewDrawData.effectView.updateEffects(context, noteEffectsCamera, currentTime);
+		// Temporarily disabled
+		// context.scorePreviewDrawData.effectView.updateEffects(context, noteEffectsCamera, currentTime);
 
 		shader->use();
 		shader->setMatrix4("projection", viewProjection);
@@ -418,12 +423,15 @@ std::array<DirectX::XMFLOAT4, 4> ScorePreviewBackground::DefaultJacket::getRight
 		else
 			renderer->endBatch();
 
+		// Temporarily disabled
+		/*
 		pteShader->use();
 		pteShader->setMatrix4("projection", pProjection);
 		pteShader->setMatrix4("view", pView);
 		renderer->beginBatch();
 		context.scorePreviewDrawData.effectView.drawUnderNoteEffects(renderer, currentTime);
 		renderer->endBatchWithBlending(GL_ONE, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
+		*/
 
 		shader->use();
 		shader->setMatrix4("projection", viewProjection);
@@ -440,12 +448,15 @@ std::array<DirectX::XMFLOAT4, 4> ScorePreviewBackground::DefaultJacket::getRight
 		else
 			renderer->endBatch();
 
+		// Temporarily disabled
+		/*
 		pteShader->use();
 		pteShader->setMatrix4("projection", pProjection);
 		pteShader->setMatrix4("view", pView);
 		renderer->beginBatch();
 		context.scorePreviewDrawData.effectView.drawEffects(renderer, currentTime);
 		renderer->endBatchWithBlending(GL_ONE, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
+		*/
 
 		previewBuffer.unblind();
 		drawList->AddImage((ImTextureID)(size_t)previewBuffer.getTexture(), position, position + size, {0, 1}, {1, 0});
