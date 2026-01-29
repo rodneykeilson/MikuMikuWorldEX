@@ -1,4 +1,5 @@
-#include <choc/memory/choc_xxHash.h>
+// TODO: choc library not available in MMWCC
+// #include <choc/memory/choc_xxHash.h>
 #include "Score.h"
 #include "BinaryReader.h"
 #include "BinaryWriter.h"
@@ -15,17 +16,13 @@ namespace MikuMikuWorld
 	id_t nextHiSpeedID = 1;
 	id_t getNextSkillID()
 	{
-		uint8_t data[sizeof(id_t)];
-		std::memcpy(data, &nextSkillID, sizeof(id_t));
-		nextSkillID = choc::hash::xxHash64::hash(&data, sizeof(id_t), HASH_SEED + 2);
-		return nextSkillID;
+		// TODO: choc library not available - using simple increment instead
+		return nextSkillID++;
 	}
 	id_t getNextHiSpeedID()
 	{
-		uint8_t data[sizeof(id_t)];
-		std::memcpy(data, &nextHiSpeedID, sizeof(id_t));
-		nextHiSpeedID = choc::hash::xxHash64::hash(&data, sizeof(id_t), HASH_SEED + 3);
-		return nextHiSpeedID;
+		// TODO: choc library not available - using simple increment instead
+		return nextHiSpeedID++;
 	}
 
 	enum NoteFlags

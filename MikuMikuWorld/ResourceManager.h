@@ -2,6 +2,7 @@
 #include <vector>
 #include "Rendering/Texture.h"
 #include "Rendering/Shader.h"
+#include "PreviewEngine.h"
 
 namespace MikuMikuWorld
 {
@@ -10,6 +11,7 @@ namespace MikuMikuWorld
 	  public:
 		static std::vector<Texture> textures;
 		static std::vector<Shader*> shaders;
+		static std::vector<SpriteTransform> spriteTransforms;
 
 		static void loadTexture(const std::string& filename,
 		                        TextureFilterMode minFilter = TextureFilterMode::Linear,
@@ -19,6 +21,8 @@ namespace MikuMikuWorld
 
 		static void loadShader(const std::string& filename);
 		static int getShader(const std::string& name);
+
+		static void loadTransforms(const std::string& filename);
 
 		static void disposeTexture(int texID);
 	};

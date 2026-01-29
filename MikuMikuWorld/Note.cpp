@@ -2,7 +2,8 @@
 #include "Constants.h"
 #include "Score.h"
 #include <algorithm>
-#include <choc/memory/choc_xxHash.h>
+// TODO: choc library not available in MMWCC - hash functionality will be disabled
+// #include <choc/memory/choc_xxHash.h>
 
 namespace MikuMikuWorld
 {
@@ -10,10 +11,8 @@ namespace MikuMikuWorld
 
 	int Note::getNextID()
 	{
-		uint8_t data[sizeof(int)];
-		std::memcpy(data, &nextID, sizeof(int));
-		nextID = choc::hash::xxHash64::hash(&data, sizeof(int), HASH_SEED + 1);
-		return nextID;
+		// TODO: choc library not available - using simple increment instead
+		return nextID++;
 	}
 
 	Note::Note(NoteType _type)

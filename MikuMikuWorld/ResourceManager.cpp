@@ -1,11 +1,13 @@
 #include "ResourceManager.h"
 #include "IO.h"
 #include <filesystem>
+#include <sstream>
 
 namespace MikuMikuWorld
 {
 	std::vector<Texture> ResourceManager::textures;
 	std::vector<Shader*> ResourceManager::shaders;
+	std::vector<SpriteTransform> ResourceManager::spriteTransforms;
 
 	void ResourceManager::loadTexture(const std::string& filename, TextureFilterMode minFilter,
 	                                  TextureFilterMode magFilter)
@@ -70,6 +72,62 @@ namespace MikuMikuWorld
 				textures.erase(textures.begin() + i);
 				return;
 			}
+		}
+	}
+
+	void ResourceManager::loadTransforms(const std::string &filename)
+	{
+		if (!IO::File::exists(filename))
+		{
+			fprintf(stderr, "ERROR: ResourceManager::loadTransforms() Could not find the file %s\n", filename.c_str());
+			return;
+		}
+		int idx = 0;
+		float transform[8 * 8];
+		std::wstring wFilename = IO::mbToWideStr(filename);
+		IO::File file(wFilename, L"r");
+		
+		std::string txt = file.readAllText();
+		if (txt.empty())
+		{
+			return;
+		}
+		// Remove comments
+		for(size_t pos, end; (pos = txt.find('#')) != std::string::npos; )
+		{
+			end = txt.find('\n', pos);
+			if (end != std::string::npos)
+				txt.erase(pos, end - pos + 1);
+			else
+				txt.erase(pos);
+		}
+		std::stringstream ss(txt);
+		float value;
+		while(ss >> value)
+		{
+			transform[idx++] = value;
+			if (idx >= std::size(transform))
+			{
+				idx = 0;
+				spriteTransforms.emplace_back(transform);
+			}
+		}
+		if (!ss.eof())
+		{
+			ss.clear();
+			auto invalid_pos = ss.tellg();
+			char invalid = ss.get();
+			std::string msg = IO::formatString(
+				"ERROR: ResourceManager::loadTransforms()\n"
+				"Unexpected characters '%c' at position %ld while reading \"%s\"\n", invalid, (long)invalid_pos, filename.c_str());
+			throw std::runtime_error(msg);
+		}
+		if (idx != 0)
+		{
+			throw std::runtime_error(
+				"ERROR: ResourceManager::loadTransforms()\n"
+				"Incompleted transform declaration!\n"
+			);
 		}
 	}
 }
