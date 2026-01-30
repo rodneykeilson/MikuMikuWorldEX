@@ -63,6 +63,7 @@ theme,Chủ đề
 base_theme,Cơ bản
 theme_light,Sáng
 theme_dark,Tối
+theme_roden,Roden
 custom_color,Màu tự chọn
 timeline,Timeline
 match_notes_size_to_timeline,Kết hợp kích thước note với độ rộng của timeline

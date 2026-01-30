@@ -7,6 +7,7 @@
 #include "ApplicationConfiguration.h"
 #include "Constants.h"
 #include "File.h"
+#include "ResourceManager.h"
 #include "SUS.h"
 #include "ScoreConverter.h"
 #include "SusExporter.h"
@@ -156,6 +157,11 @@ void ScoreEditor::fetchUpdate()
 void ScoreEditor::writeSettings()
 {
 		config.zoom = timeline.getZoom();
+		
+		// Save session state for restore
+		config.lastOpenedFile = std::string(context.workingData.filename);
+		config.lastScrollPosition = context.currentTick;
+		config.lastZoom = timeline.getZoom();
 	}
 
 	void ScoreEditor::uninitialize()
@@ -243,6 +249,29 @@ void ScoreEditor::writeSettings()
 				context.lerpHiSpeeds(timeline.getDivision(), EaseType::Linear);
 			if (ImGui::IsAnyPressed(config.input.togglePreviewFullWindow, false))
 				preview.setFullWindow(!preview.isFullWindow());
+
+			// Layer switching shortcuts (Alt+1-9 for layers, Alt+0 for toggle all)
+			if (ImGui::IsAnyPressed(config.input.selectLayer1))
+				if (context.score.layers.size() > 0) context.selectedLayer = 0;
+			if (ImGui::IsAnyPressed(config.input.selectLayer2))
+				if (context.score.layers.size() > 1) context.selectedLayer = 1;
+			if (ImGui::IsAnyPressed(config.input.selectLayer3))
+				if (context.score.layers.size() > 2) context.selectedLayer = 2;
+			if (ImGui::IsAnyPressed(config.input.selectLayer4))
+				if (context.score.layers.size() > 3) context.selectedLayer = 3;
+			if (ImGui::IsAnyPressed(config.input.selectLayer5))
+				if (context.score.layers.size() > 4) context.selectedLayer = 4;
+			if (ImGui::IsAnyPressed(config.input.selectLayer6))
+				if (context.score.layers.size() > 5) context.selectedLayer = 5;
+			if (ImGui::IsAnyPressed(config.input.selectLayer7))
+				if (context.score.layers.size() > 6) context.selectedLayer = 6;
+			if (ImGui::IsAnyPressed(config.input.selectLayer8))
+				if (context.score.layers.size() > 7) context.selectedLayer = 7;
+			if (ImGui::IsAnyPressed(config.input.selectLayer9))
+				if (context.score.layers.size() > 8) context.selectedLayer = 8;
+			if (ImGui::IsAnyPressed(config.input.toggleAllLayers))
+				context.showAllLayers = !context.showAllLayers;
+
 		// ESC key exits fullscreen preview
 		if (preview.isFullWindow() && ImGui::IsKeyPressed(ImGuiKey_Escape))
 			preview.setFullWindow(false);
@@ -297,6 +326,43 @@ void ScoreEditor::writeSettings()
 		aboutDialog.update();
 		updateAvailableDialog.update();
 
+		// Check for crash recovery on startup
+		if (!crashRecoveryChecked)
+		{
+			checkForCrashRecovery();
+			crashRecoveryChecked = true;
+		}
+
+		// Crash recovery dialog
+		if (showCrashRecoveryDialog)
+		{
+			ImGui::OpenPopup(MODAL_TITLE("crash_recovery"));
+			showCrashRecoveryDialog = false;
+		}
+		
+		ImGui::SetNextWindowSize(ImVec2(450, 0), ImGuiCond_FirstUseEver);
+		if (ImGui::BeginPopupModal(MODAL_TITLE("crash_recovery"), NULL, ImGuiWindowFlags_AlwaysAutoResize))
+		{
+			ImGui::TextWrapped("%s", getString("crash_recovery_description"));
+			ImGui::Spacing();
+			ImGui::TextColored(ImVec4(0.7f, 0.7f, 0.7f, 1.0f), "%s", latestAutoSaveFile.c_str());
+			ImGui::Spacing();
+			ImGui::Separator();
+			ImGui::Spacing();
+
+			if (ImGui::Button(getString("recover_auto_save"), ImVec2(150, 0)))
+			{
+				loadScore(latestAutoSaveFile);
+				ImGui::CloseCurrentPopup();
+			}
+			ImGui::SameLine();
+			if (ImGui::Button(getString("start_fresh"), ImVec2(120, 0)))
+			{
+				ImGui::CloseCurrentPopup();
+			}
+			ImGui::EndPopup();
+		}
+
 		if (!isFullScreenPreview())
 		{
 			ImGui::Begin(IMGUI_TITLE(ICON_FA_MUSIC, "notes_timeline"), NULL,
@@ -338,6 +404,33 @@ void ScoreEditor::writeSettings()
 		if (config.debugEnabled)
 		{
 			debugWindow.update(context, timeline);
+		}
+
+		// Show resource warnings if any resources failed to load
+		if (ResourceManager::hasWarnings())
+		{
+			ImGui::SetNextWindowSize(ImVec2(500, 300), ImGuiCond_FirstUseEver);
+			if (ImGui::Begin(IMGUI_TITLE(ICON_FA_EXCLAMATION_TRIANGLE, "resource_warnings"), NULL,
+			                 ImGuiWindowFlags_Static))
+			{
+				ImGui::TextColored(ImVec4(1.0f, 0.8f, 0.0f, 1.0f), 
+				                   "%s", getString("resource_warnings_description"));
+				ImGui::Separator();
+				
+				for (const auto& warning : ResourceManager::warnings)
+				{
+					ImGui::TextColored(ImVec4(1.0f, 0.5f, 0.0f, 1.0f), "[%s]", warning.resourceType.c_str());
+					ImGui::SameLine();
+					ImGui::TextWrapped("%s", warning.message.c_str());
+				}
+				
+				ImGui::Separator();
+				if (ImGui::Button(getString("dismiss_warnings")))
+				{
+					ResourceManager::clearWarnings();
+				}
+			}
+			ImGui::End();
 		}
 
 		if (ImGui::Begin(IMGUI_TITLE(ICON_FA_ALIGN_LEFT, "chart_properties"), NULL,
@@ -1041,5 +1134,66 @@ void ScoreEditor::writeSettings()
 		}
 
 		return deleteCount;
+	}
+
+	std::string ScoreEditor::findLatestAutoSave()
+	{
+		std::wstring wAutoSaveDir = IO::mbToWideStr(autoSavePath);
+		if (!std::filesystem::exists(wAutoSaveDir))
+			return "";
+
+		using entry = std::filesystem::directory_entry;
+		std::vector<entry> autoSaveFiles;
+		
+		for (const auto& file : std::filesystem::directory_iterator(wAutoSaveDir))
+		{
+			std::string extension = file.path().extension().string();
+			std::transform(extension.begin(), extension.end(), extension.begin(), ::tolower);
+			if (extension == CC_MMWS_EXTENSION || extension == MMWS_EXTENSION)
+				autoSaveFiles.push_back(file);
+		}
+
+		if (autoSaveFiles.empty())
+			return "";
+
+		// Sort by modification time, newest first
+		std::sort(autoSaveFiles.begin(), autoSaveFiles.end(),
+		          [](const entry& f1, const entry& f2)
+		          { return f1.last_write_time() > f2.last_write_time(); });
+
+		return autoSaveFiles.front().path().string();
+	}
+
+	void ScoreEditor::checkForCrashRecovery()
+	{
+		latestAutoSaveFile = findLatestAutoSave();
+		
+		if (!latestAutoSaveFile.empty())
+		{
+			// Check if the auto-save file is recent (within last 24 hours)
+			auto fileTime = std::filesystem::last_write_time(latestAutoSaveFile);
+			auto now = std::filesystem::file_time_type::clock::now();
+			auto age = now - fileTime;
+			
+			// Only show recovery dialog if file is less than 24 hours old
+			if (age < std::chrono::hours(24))
+			{
+				showCrashRecoveryDialog = true;
+				return; // Don't restore session if crash recovery is available
+			}
+		}
+		
+		// Session restore - load last opened file if enabled
+		if (config.restoreLastSession && !config.lastOpenedFile.empty())
+		{
+			if (IO::File::exists(config.lastOpenedFile))
+			{
+				loadScore(config.lastOpenedFile);
+				
+				// Restore scroll position
+				context.currentTick = config.lastScrollPosition;
+				timeline.setZoom(config.lastZoom);
+			}
+		}
 	}
 }

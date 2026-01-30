@@ -10,6 +10,7 @@
 #include "TimelineMode.h"
 #include "PreviewData.h"
 #include <unordered_set>
+#include <optional>
 
 namespace MikuMikuWorld
 {
@@ -179,6 +180,20 @@ namespace MikuMikuWorld
 		 * @param deleteOrigin Delete the original hold notes or not
 		 */
 		void convertHoldToTraces(int division, bool deleteOrigin);
+
+		/**
+		 * @brief Set hold start/end type for selected holds
+		 * @param startType Type for hold starts (Normal, Hidden, or unchanged if nullopt)
+		 * @param endType Type for hold ends (Normal, Hidden, or unchanged if nullopt)
+		 */
+		void setHoldStartEndTypes(std::optional<HoldNoteType> startType, std::optional<HoldNoteType> endType);
+
+		/**
+		 * @brief Convert selected hold notes to friction/trace notes
+		 * @param convertStarts Convert hold starts to traces
+		 * @param convertEnds Convert hold ends to traces
+		 */
+		void convertHoldPointsToTraces(bool convertStarts, bool convertEnds);
 
 		void lerpHiSpeeds(int division, EaseType ease);
 

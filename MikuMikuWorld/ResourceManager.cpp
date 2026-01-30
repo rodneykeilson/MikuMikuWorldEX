@@ -13,18 +13,40 @@ namespace MikuMikuWorld
 	std::vector<Texture> ResourceManager::textures;
 	std::vector<Shader*> ResourceManager::shaders;
 	std::vector<SpriteTransform> ResourceManager::spriteTransforms;
+	std::vector<ResourceWarning> ResourceManager::warnings;
 
 	int ResourceManager::nextParticleId{ 1 };
 	ParticleIdMap ResourceManager::particleIdMap;
 	std::map<std::string, int> ResourceManager::effectNameToRootIdMap;
+
+	void ResourceManager::addWarning(const std::string& type, const std::string& path, const std::string& msg)
+	{
+		ResourceWarning w;
+		w.resourceType = type;
+		w.resourcePath = path;
+		w.message = msg;
+		w.timestamp = 0; // Will be set by caller if needed
+		warnings.push_back(w);
+	}
+
+	void ResourceManager::clearWarnings()
+	{
+		warnings.clear();
+	}
+
+	bool ResourceManager::hasWarnings()
+	{
+		return !warnings.empty();
+	}
 
 	void ResourceManager::loadTexture(const std::string& filename, TextureFilterMode minFilter,
 	                                  TextureFilterMode magFilter)
 	{
 		if (!IO::File::exists(filename))
 		{
-			printf("ERROR: ResourceManager::loadTexture() Could not find texture file %s\n",
-			       filename.c_str());
+			std::string msg = IO::formatString("Could not find texture file: %s", filename.c_str());
+			printf("WARNING: ResourceManager::loadTexture() %s\n", msg.c_str());
+			addWarning("Texture", filename, msg);
 			return;
 		}
 
@@ -88,7 +110,9 @@ namespace MikuMikuWorld
 	{
 		if (!IO::File::exists(filename))
 		{
-			fprintf(stderr, "ERROR: ResourceManager::loadTransforms() Could not find the file %s\n", filename.c_str());
+			std::string msg = IO::formatString("Could not find transforms file: %s", filename.c_str());
+			fprintf(stderr, "WARNING: ResourceManager::loadTransforms() %s\n", msg.c_str());
+			addWarning("Transforms", filename, msg);
 			return;
 		}
 		int idx = 0;

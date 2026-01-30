@@ -75,7 +75,19 @@ namespace MikuMikuWorld
 		MultiInputBinding timelineHiSpeed = { "timeline_hi_speed",
 			                                  { ImGuiKey_0 },
 			                                  { ImGuiKey_Keypad0 } };
-		MultiInputBinding togglePreviewFullWindow = { "toggle_preview_fullscreen", {} };
+		MultiInputBinding togglePreviewFullWindow = { "toggle_preview_fullscreen", { ImGuiKey_F5 } };
+
+		// Layer switching shortcuts (Alt+1-9)
+		MultiInputBinding selectLayer1 = { "select_layer_1", { ImGuiKey_1, ImGuiModFlags_Alt } };
+		MultiInputBinding selectLayer2 = { "select_layer_2", { ImGuiKey_2, ImGuiModFlags_Alt } };
+		MultiInputBinding selectLayer3 = { "select_layer_3", { ImGuiKey_3, ImGuiModFlags_Alt } };
+		MultiInputBinding selectLayer4 = { "select_layer_4", { ImGuiKey_4, ImGuiModFlags_Alt } };
+		MultiInputBinding selectLayer5 = { "select_layer_5", { ImGuiKey_5, ImGuiModFlags_Alt } };
+		MultiInputBinding selectLayer6 = { "select_layer_6", { ImGuiKey_6, ImGuiModFlags_Alt } };
+		MultiInputBinding selectLayer7 = { "select_layer_7", { ImGuiKey_7, ImGuiModFlags_Alt } };
+		MultiInputBinding selectLayer8 = { "select_layer_8", { ImGuiKey_8, ImGuiModFlags_Alt } };
+		MultiInputBinding selectLayer9 = { "select_layer_9", { ImGuiKey_9, ImGuiModFlags_Alt } };
+		MultiInputBinding toggleAllLayers = { "toggle_all_layers", { ImGuiKey_0, ImGuiModFlags_Alt } };
 	};
 
 	constexpr size_t maxRecentFilesEntries = 10;
@@ -124,6 +136,12 @@ namespace MikuMikuWorld
 		float seVolume;
 		int seProfileIndex;
 		bool debugEnabled;
+
+		// Session restore
+		bool restoreLastSession;
+		std::string lastOpenedFile;
+		int lastScrollPosition;
+		float lastZoom;
 
 		// Preview settings
 		bool pvLockAspectRatio;
@@ -204,6 +222,17 @@ namespace MikuMikuWorld
 		&config.input.timelineTimeSignature,
 		&config.input.timelineHiSpeed,
 		&config.input.togglePreviewFullWindow,
+
+		&config.input.selectLayer1,
+		&config.input.selectLayer2,
+		&config.input.selectLayer3,
+		&config.input.selectLayer4,
+		&config.input.selectLayer5,
+		&config.input.selectLayer6,
+		&config.input.selectLayer7,
+		&config.input.selectLayer8,
+		&config.input.selectLayer9,
+		&config.input.toggleAllLayers,
 
 		&config.input.openHelp,
 		&config.input.openSettings,

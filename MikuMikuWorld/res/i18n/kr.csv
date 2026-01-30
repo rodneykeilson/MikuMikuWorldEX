@@ -64,6 +64,7 @@ theme,주제
 base_theme,기본 테마
 theme_light,빛
 theme_dark,어두운
+theme_roden,로덴
 custom_color,맞춤 색상
 timeline,타임라인
 match_notes_size_to_timeline,노트 크기를 타임라인에 일치시키세요

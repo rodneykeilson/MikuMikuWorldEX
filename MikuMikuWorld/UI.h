@@ -41,12 +41,13 @@ namespace MikuMikuWorld
 	{
 		DARK,
 		LIGHT,
+		RODEN,
 		BASE_THEME_MAX
 	};
 
 	constexpr const char* colorDisplayStr[]{ "RGB", "HSV", "Hex" };
 
-	constexpr const char* baseThemes[]{ "theme_dark", "theme_light" };
+	constexpr const char* baseThemes[]{ "theme_dark", "theme_light", "theme_roden" };
 
 	class UI
 	{

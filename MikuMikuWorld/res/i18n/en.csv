@@ -66,6 +66,7 @@ theme,Theme
 base_theme,Base Theme
 theme_light,Light
 theme_dark,Dark
+theme_roden,Roden
 custom_color,Custom Color
 timeline,Timeline
 match_notes_size_to_timeline,Match notes size to timeline width
@@ -136,6 +137,13 @@ repeat_hold_mids,Repeat Hold Mids
 hold_to_traces,Convert Hold to Traces
 add_traces_for_hold,Add Traces for Hold
 convert_hold_to_traces,Convert Hold to Traces
+hold_conversion,Hold Conversion
+hold_starts_to_hidden,Hold Starts to Hidden
+hold_ends_to_hidden,Hold Ends to Hidden
+hold_starts_to_traces,Hold Starts to Traces
+hold_ends_to_traces,Hold Ends to Traces
+reset_hold_starts,Reset Hold Starts
+reset_hold_ends,Reset Hold Ends
 step_type,Hold Mid Type
 ease_type,Ease Type
 flick_type,Flick Type
@@ -165,6 +173,11 @@ guides,Guides
 traces,Traces
 total,Total
 combo,Combo
+difficulty_estimate,Difficulty Estimate
+nps,Notes/Second
+estimated_level,Estimated Level
+duration,Duration
+seconds,sec
 goto_measure,Go To Measure
 division,%d Division
 division_affix,%d Division
@@ -279,6 +292,21 @@ preview,Preview
 score_preview,Score Preview
 score_preview_full,Score Preview (Fullscreen)
 toggle_preview_fullscreen,Toggle Preview Fullscreen
+
+# resource warnings
+resource_warnings,Resource Warnings
+resource_warnings_description,Some resources failed to load. The editor may not display correctly.
+dismiss_warnings,Dismiss
+
+# crash recovery
+crash_recovery,Crash Recovery
+crash_recovery_description,An auto-save file was found from a previous session. Would you like to recover your work?
+recover_auto_save,Recover Auto-Save
+start_fresh,Start Fresh
+
+# session
+session,Session
+restore_last_session,Restore last opened file on startup
 
 # preview settings
 notes_speed,Notes Speed

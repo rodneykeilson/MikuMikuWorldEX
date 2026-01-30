@@ -83,7 +83,7 @@ namespace MikuMikuWorld
 			scrollSpeedNormal =
 			    jsonIO::tryGetValue<float>(config["timeline"], "scroll_speed_normal", 2.0f);
 			scrollSpeedShift =
-			    jsonIO::tryGetValue<float>(config["timleine"], "scroll_speed_fast", 5.0f);
+			    jsonIO::tryGetValue<float>(config["timeline"], "scroll_speed_fast", 5.0f);
 
 			drawWaveform = jsonIO::tryGetValue<bool>(config["timeline"], "draw_waveform", true);
 			returnToLastSelectedTickOnPause = jsonIO::tryGetValue<bool>(
@@ -107,6 +107,14 @@ namespace MikuMikuWorld
 			autoSaveEnabled = jsonIO::tryGetValue<bool>(config["save"], "auto_save_enabled", true);
 			autoSaveInterval = jsonIO::tryGetValue<int>(config["save"], "auto_save_interval", 5);
 			autoSaveMaxCount = jsonIO::tryGetValue<int>(config["save"], "auto_save_max_count", 100);
+		}
+
+		if (jsonIO::keyExists(config, "session"))
+		{
+			restoreLastSession = jsonIO::tryGetValue<bool>(config["session"], "restore_last_session", true);
+			lastOpenedFile = jsonIO::tryGetValue<std::string>(config["session"], "last_opened_file", "");
+			lastScrollPosition = jsonIO::tryGetValue<int>(config["session"], "last_scroll_position", 0);
+			lastZoom = jsonIO::tryGetValue<float>(config["session"], "last_zoom", 1.0f);
 		}
 
 		if (jsonIO::keyExists(config, "audio"))
@@ -214,6 +222,11 @@ namespace MikuMikuWorld
 			               { "auto_save_interval", autoSaveInterval },
 			               { "auto_save_max_count", autoSaveMaxCount } };
 
+		config["session"] = { { "restore_last_session", restoreLastSession },
+			                  { "last_opened_file", lastOpenedFile },
+			                  { "last_scroll_position", lastScrollPosition },
+			                  { "last_zoom", lastZoom } };
+
 		config["audio"] = { { "se_profile", seProfileIndex },
 			                { "master_volume", masterVolume },
 			                { "bgm_volume", bgmVolume },
@@ -293,6 +306,11 @@ namespace MikuMikuWorld
 		autoSaveEnabled = true;
 		autoSaveInterval = 5;
 		autoSaveMaxCount = 100;
+
+		restoreLastSession = true;
+		lastOpenedFile = "";
+		lastScrollPosition = 0;
+		lastZoom = 1.0f;
 
 		seProfileIndex = 0;
 		masterVolume = 1.0f;

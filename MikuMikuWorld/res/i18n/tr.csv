@@ -66,6 +66,7 @@ theme, Tema
 base_theme, Temel tema
 theme_light, Açik
 theme_dark, Koyu
+theme_roden, Roden
 custom_color, Özel renk
 timeline, Zaman çizelgesi
 match_notes_size_to_timeline, Not boyutunu zaman çizelgesinin genisligine göre eslestir

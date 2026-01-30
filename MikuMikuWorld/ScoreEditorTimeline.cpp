@@ -379,6 +379,24 @@ namespace MikuMikuWorld
 				ImGui::EndMenu();
 			}
 
+			if (ImGui::BeginMenu(getString("hold_conversion"), context.selectionHasHold()))
+			{
+				if (ImGui::MenuItem(getString("hold_starts_to_hidden")))
+					context.setHoldStartEndTypes(HoldNoteType::Hidden, std::nullopt);
+				if (ImGui::MenuItem(getString("hold_ends_to_hidden")))
+					context.setHoldStartEndTypes(std::nullopt, HoldNoteType::Hidden);
+				if (ImGui::MenuItem(getString("hold_starts_to_traces")))
+					context.convertHoldPointsToTraces(true, false);
+				if (ImGui::MenuItem(getString("hold_ends_to_traces")))
+					context.convertHoldPointsToTraces(false, true);
+				ImGui::Separator();
+				if (ImGui::MenuItem(getString("reset_hold_starts")))
+					context.setHoldStartEndTypes(HoldNoteType::Normal, std::nullopt);
+				if (ImGui::MenuItem(getString("reset_hold_ends")))
+					context.setHoldStartEndTypes(std::nullopt, HoldNoteType::Normal);
+				ImGui::EndMenu();
+			}
+
 			ImGui::Separator();
 			if (ImGui::BeginMenu(getString("lerp_hispeeds"),
 			                     context.selectedHiSpeedChanges.size() >= 2))
@@ -465,6 +483,14 @@ namespace MikuMikuWorld
 				if (ImGui::IsMouseClicked(0))
 				{
 					dragStart = mousePos;
+					// Shift+Click starts lasso mode
+					lassoMode = io.KeyShift;
+					lassoActive = false;
+					lassoPoints.clear();
+					if (lassoMode)
+					{
+						lassoPoints.push_back(mousePos);
+					}
 					if (!io.KeyCtrl && !io.KeyAlt &&
 					    !ImGui::IsPopupOpen(IMGUI_TITLE(ICON_FA_MUSIC, "notes_timeline")))
 					{
@@ -476,23 +502,43 @@ namespace MikuMikuWorld
 				// Clicked and dragging inside the timeline
 				if (clickedOnTimeline && ImGui::IsMouseDown(0) &&
 				    ImGui::IsMouseDragPastThreshold(0, 10.0f))
+				{
 					dragging = true;
+					if (lassoMode)
+					{
+						lassoActive = true;
+						// Add points while dragging for lasso
+						if (lassoPoints.empty() || 
+						    (abs(lassoPoints.back().x - mousePos.x) > 3.0f || 
+						     abs(lassoPoints.back().y - mousePos.y) > 3.0f))
+						{
+							lassoPoints.push_back(mousePos);
+						}
+					}
+				}
 			}
 		}
 
 		offset = std::max(offset, minOffset);
 		updateScrollingPosition();
 
-		// Selection rectangle
-		// Draw selection rectangle after notes are rendered
+		// Helper function for point-in-polygon test (ray casting algorithm)
+		auto pointInPolygon = [](const std::vector<ImVec2>& polygon, float x, float y) -> bool {
+			if (polygon.size() < 3) return false;
+			bool inside = false;
+			for (size_t i = 0, j = polygon.size() - 1; i < polygon.size(); j = i++) {
+				float xi = polygon[i].x, yi = polygon[i].y;
+				float xj = polygon[j].x, yj = polygon[j].y;
+				if (((yi > y) != (yj > y)) && (x < (xj - xi) * (y - yi) / (yj - yi) + xi))
+					inside = !inside;
+			}
+			return inside;
+		};
+
+		// Selection rectangle or lasso
+		// Draw selection after notes are rendered
 		if (dragging && ImGui::IsMouseReleased(0) && !pasting)
 		{
-			// Calculate drag selection
-			float left = std::min(dragStart.x, mousePos.x);
-			float right = std::max(dragStart.x, mousePos.x);
-			float top = std::min(dragStart.y, mousePos.y);
-			float bottom = std::max(dragStart.y, mousePos.y);
-
 			if (!io.KeyAlt && !io.KeyCtrl)
 			{
 				context.selectedNotes.clear();
@@ -500,44 +546,94 @@ namespace MikuMikuWorld
 			}
 
 			float yThreshold = (notesHeight * 0.5f) + 2.0f;
-			for (const auto& [id, note] : context.score.notes)
-			{
-				const bool layerHidden = isLayerHidden(context.score.layers, note.layer);
-				if ((layerHidden || note.layer != context.selectedLayer) && !context.showAllLayers)
-					continue;
-				float x1 = laneToPosition(note.lane);
-				float x2 = laneToPosition(note.lane + note.width);
-				float y = -tickToPosition(note.tick);
 
-				if (right > x1 && left < x2 &&
-				    isWithinRange(y, top - yThreshold, bottom + yThreshold))
+			if (lassoMode && lassoPoints.size() >= 3)
+			{
+				// Lasso selection - use point-in-polygon test
+				for (const auto& [id, note] : context.score.notes)
 				{
-					if (io.KeyAlt)
-						context.selectedNotes.erase(id);
-					else
-						context.selectedNotes.insert(id);
+					const bool layerHidden = isLayerHidden(context.score.layers, note.layer);
+					if ((layerHidden || note.layer != context.selectedLayer) && !context.showAllLayers)
+						continue;
+					
+					// Check center point of note
+					float noteX = (laneToPosition(note.lane) + laneToPosition(note.lane + note.width)) / 2.0f;
+					float noteY = -tickToPosition(note.tick);
+
+					if (pointInPolygon(lassoPoints, noteX, noteY))
+					{
+						if (io.KeyAlt)
+							context.selectedNotes.erase(id);
+						else
+							context.selectedNotes.insert(id);
+					}
+				}
+				
+				for (const auto& [id, hsc] : context.score.hiSpeedChanges)
+				{
+					float hsX = laneToPosition(MAX_LANE + context.score.metadata.laneExtension + 1) + 150;
+					float hsY = -tickToPosition(hsc.tick);
+
+					if ((hsc.layer == context.selectedLayer || context.showAllLayers) &&
+					    pointInPolygon(lassoPoints, hsX, hsY))
+					{
+						if (io.KeyAlt)
+							context.selectedHiSpeedChanges.erase(id);
+						else
+							context.selectedHiSpeedChanges.insert(id);
+					}
 				}
 			}
-			for (const auto& [id, hsc] : context.score.hiSpeedChanges)
+			else
 			{
-				float lx =
-				    laneToPosition(MAX_LANE + context.score.metadata.laneExtension + 1) + 123;
-				float rx =
-				    laneToPosition(MAX_LANE + context.score.metadata.laneExtension + 1) + 180;
-				float y = -tickToPosition(hsc.tick);
+				// Rectangle selection (original behavior)
+				float left = std::min(dragStart.x, mousePos.x);
+				float right = std::max(dragStart.x, mousePos.x);
+				float top = std::min(dragStart.y, mousePos.y);
+				float bottom = std::max(dragStart.y, mousePos.y);
 
-				if (right > lx && left < rx &&
-				    (hsc.layer == context.selectedLayer || context.showAllLayers) &&
-				    isWithinRange(y, top - yThreshold / 2, bottom + yThreshold / 2))
+				for (const auto& [id, note] : context.score.notes)
 				{
-					if (io.KeyAlt)
-						context.selectedHiSpeedChanges.erase(id);
-					else
-						context.selectedHiSpeedChanges.insert(id);
+					const bool layerHidden = isLayerHidden(context.score.layers, note.layer);
+					if ((layerHidden || note.layer != context.selectedLayer) && !context.showAllLayers)
+						continue;
+					float x1 = laneToPosition(note.lane);
+					float x2 = laneToPosition(note.lane + note.width);
+					float y = -tickToPosition(note.tick);
+
+					if (right > x1 && left < x2 &&
+					    isWithinRange(y, top - yThreshold, bottom + yThreshold))
+					{
+						if (io.KeyAlt)
+							context.selectedNotes.erase(id);
+						else
+							context.selectedNotes.insert(id);
+					}
+				}
+				for (const auto& [id, hsc] : context.score.hiSpeedChanges)
+				{
+					float lx =
+					    laneToPosition(MAX_LANE + context.score.metadata.laneExtension + 1) + 123;
+					float rx =
+					    laneToPosition(MAX_LANE + context.score.metadata.laneExtension + 1) + 180;
+					float y = -tickToPosition(hsc.tick);
+
+					if (right > lx && left < rx &&
+					    (hsc.layer == context.selectedLayer || context.showAllLayers) &&
+					    isWithinRange(y, top - yThreshold / 2, bottom + yThreshold / 2))
+					{
+						if (io.KeyAlt)
+							context.selectedHiSpeedChanges.erase(id);
+						else
+							context.selectedHiSpeedChanges.insert(id);
+					}
 				}
 			}
 
 			dragging = false;
+			lassoMode = false;
+			lassoActive = false;
+			lassoPoints.clear();
 		}
 
 		const float x1 = getTimelineStartX();
@@ -801,16 +897,62 @@ namespace MikuMikuWorld
 
 		if (dragging && !pasting)
 		{
-			float startX = std::min(position.x + dragStart.x, position.x + mousePos.x);
-			float endX = std::max(position.x + dragStart.x, position.x + mousePos.x);
-			float startY =
-			    std::min(position.y + dragStart.y, position.y + mousePos.y) + visualOffset;
-			float endY = std::max(position.y + dragStart.y, position.y + mousePos.y) + visualOffset;
-			ImVec2 start{ startX, startY };
-			ImVec2 end{ endX, endY };
+			if (lassoMode && lassoPoints.size() >= 2)
+			{
+				// Draw lasso polygon
+				std::vector<ImVec2> screenPoints;
+				screenPoints.reserve(lassoPoints.size());
+				for (const auto& pt : lassoPoints)
+				{
+					screenPoints.push_back(ImVec2(position.x + pt.x, position.y + pt.y + visualOffset));
+				}
+				
+				// Draw filled polygon if we have enough points
+				if (screenPoints.size() >= 3)
+				{
+					// Use convex hull approximation for rendering (ImGui limitation)
+					// For now, draw as a line strip with fill approximation
+					for (size_t i = 1; i < screenPoints.size(); ++i)
+					{
+						drawList->AddLine(screenPoints[i-1], screenPoints[i], 0xbbcccccc, 2.0f);
+					}
+					drawList->AddLine(screenPoints.back(), screenPoints.front(), 0xbbcccccc, 2.0f);
+					
+					// Draw semi-transparent fill using triangles from centroid
+					ImVec2 centroid(0, 0);
+					for (const auto& pt : screenPoints)
+					{
+						centroid.x += pt.x;
+						centroid.y += pt.y;
+					}
+					centroid.x /= screenPoints.size();
+					centroid.y /= screenPoints.size();
+					
+					for (size_t i = 0; i < screenPoints.size(); ++i)
+					{
+						size_t next = (i + 1) % screenPoints.size();
+						drawList->AddTriangleFilled(centroid, screenPoints[i], screenPoints[next], selectionColor1);
+					}
+				}
+				else if (screenPoints.size() == 2)
+				{
+					drawList->AddLine(screenPoints[0], screenPoints[1], 0xbbcccccc, 2.0f);
+				}
+			}
+			else
+			{
+				// Rectangle selection (original behavior)
+				float startX = std::min(position.x + dragStart.x, position.x + mousePos.x);
+				float endX = std::max(position.x + dragStart.x, position.x + mousePos.x);
+				float startY =
+				    std::min(position.y + dragStart.y, position.y + mousePos.y) + visualOffset;
+				float endY = std::max(position.y + dragStart.y, position.y + mousePos.y) + visualOffset;
+				ImVec2 start{ startX, startY };
+				ImVec2 end{ endX, endY };
 
-			drawList->AddRectFilled(start, end, selectionColor1);
-			drawList->AddRect(start, end, 0xbbcccccc, 0.2f, ImDrawFlags_RoundCornersAll, 1.0f);
+				drawList->AddRectFilled(start, end, selectionColor1);
+				drawList->AddRect(start, end, 0xbbcccccc, 0.2f, ImDrawFlags_RoundCornersAll, 1.0f);
+			}
 
 			ImVec2 iconPos = ImVec2(position + dragStart);
 			iconPos.y += visualOffset;
@@ -996,19 +1138,33 @@ namespace MikuMikuWorld
 			if (note.getType() == NoteType::Tap)
 			{
 				updateNote(context, edit, note);
-				drawNote(note, renderer,
-				         (context.showAllLayers || note.layer == context.selectedLayer)
+				Color baseTint = (context.showAllLayers || note.layer == context.selectedLayer)
 				             ? noteTint
-				             : otherLayerTint,
+				             : otherLayerTint;
+				// Add hover glow effect
+				if (note.ID == hoveringNote)
+					baseTint = Color(
+						std::min(1.0f, baseTint.r + 0.3f),
+						std::min(1.0f, baseTint.g + 0.3f),
+						std::min(1.0f, baseTint.b + 0.3f),
+						baseTint.a);
+				drawNote(note, renderer, baseTint,
 				         0, 0, context.showAllLayers || note.layer == context.selectedLayer);
 			}
 			if (note.getType() == NoteType::Damage)
 			{
 				updateNote(context, edit, note);
-				drawCcNote(note, renderer,
-				           (context.showAllLayers || note.layer == context.selectedLayer)
+				Color baseTint = (context.showAllLayers || note.layer == context.selectedLayer)
 				               ? noteTint
-				               : otherLayerTint,
+				               : otherLayerTint;
+				// Add hover glow effect
+				if (note.ID == hoveringNote)
+					baseTint = Color(
+						std::min(1.0f, baseTint.r + 0.3f),
+						std::min(1.0f, baseTint.g + 0.3f),
+						std::min(1.0f, baseTint.b + 0.3f),
+						baseTint.a);
+				drawCcNote(note, renderer, baseTint,
 				           0, 0, context.showAllLayers || note.layer == context.selectedLayer);
 			}
 		}

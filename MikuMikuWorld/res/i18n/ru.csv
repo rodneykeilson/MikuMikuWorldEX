@@ -66,6 +66,7 @@ theme, Тема
 base_theme, Базовая тема
 theme_light, Светлая
 theme_dark, Тёмная
+theme_roden, Роден
 accent_color, Акцентный цвет
 accent_color_help, Выберите акцентный цвет чтобы применить
 select_accent_color, Выберите акцентный цвет

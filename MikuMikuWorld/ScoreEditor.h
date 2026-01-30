@@ -29,11 +29,16 @@ namespace MikuMikuWorld
 		Stopwatch autoSaveTimer;
 		std::string autoSavePath;
 		bool showImGuiDemoWindow;
+		bool showCrashRecoveryDialog{ false };
+		bool crashRecoveryChecked{ false };
+		std::string latestAutoSaveFile;
 
 		bool save(std::string filename);
 		size_t updateRecentFilesList(const std::string& entry);
 
 		void fetchUpdate();
+		void checkForCrashRecovery();
+		std::string findLatestAutoSave();
 
 	  public:
 		ScoreEditor();

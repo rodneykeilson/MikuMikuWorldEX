@@ -64,6 +64,7 @@ theme, Tema
 base_theme, Tema base
 theme_light, Claro
 theme_dark, Oscuro
+theme_roden, Roden
 accent_color, Color principal
 accent_color_help, Seleccione el color principal a aplicar. El color más a la izquierda se puede personalizar en la configuración de abajo.
 select_accent_color, Selecciona un color principal.

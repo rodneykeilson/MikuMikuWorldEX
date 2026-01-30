@@ -65,6 +65,7 @@ theme, テーマ
 base_theme, 基本テーマ
 theme_light, ライト
 theme_dark, ダーク
+theme_roden, ローデン
 custom_color, カスタム色
 timeline, タイムライン
 match_notes_size_to_timeline, ノーツの高さをレーンの幅に合わせる
@@ -134,6 +135,13 @@ split_hold, 切断
 hold_to_traces, トレースに変換
 add_traces_for_hold, トレースを追加
 convert_hold_to_traces, トレースに変換
+hold_conversion, スライド変換
+hold_starts_to_hidden, 始点を非表示
+hold_ends_to_hidden, 終点を非表示
+hold_starts_to_traces, 始点をトレースに
+hold_ends_to_traces, 終点をトレースに
+reset_hold_starts, 始点をリセット
+reset_hold_ends, 終点をリセット
 lerp_hispeeds, ハイスピードを補間
 repeat_hold_mids, 中継点を繰り返す
 step_type, 中継点の種類
@@ -161,6 +169,11 @@ steps, スライド中継点
 traces, トレース
 total, 合計
 combo, コンボ
+difficulty_estimate, 難易度予測
+nps, ノーツ/秒
+estimated_level, 推定レベル
+duration, 時間
+seconds, 秒
 goto_measure, 小節に移動
 division, %d分音符
 division_affix, %d分音符
@@ -268,3 +281,18 @@ timeline_time_signature, タイムライン「拍子」
 timeline_hi_speed, タイムライン「ハイスピード」
 zoom_in, ズームイン
 zoom_out, ズームアウト
+
+# resource warnings
+resource_warnings, リソース警告
+resource_warnings_description, 一部のリソースの読み込みに失敗しました。エディタが正しく表示されない可能性があります。
+dismiss_warnings, 閉じる
+
+# crash recovery
+crash_recovery, クラッシュ復元
+crash_recovery_description, 前回のセッションからオートセーブファイルが見つかりました。作業を復元しますか？
+recover_auto_save, 復元する
+start_fresh, 新規開始
+
+# session
+session, セッション
+restore_last_session, 起動時に前回のファイルを開く

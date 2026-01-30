@@ -10,12 +10,21 @@ namespace MikuMikuWorld
 {
 	typedef std::map<int, Effect::Particle> ParticleIdMap;
 
+	struct ResourceWarning
+	{
+		std::string resourceType;
+		std::string resourcePath;
+		std::string message;
+		float timestamp;
+	};
+
 	class ResourceManager
 	{
 	  public:
 		static std::vector<Texture> textures;
 		static std::vector<Shader*> shaders;
 		static std::vector<SpriteTransform> spriteTransforms;
+		static std::vector<ResourceWarning> warnings;
 
 		static void loadTexture(const std::string& filename,
 		                        TextureFilterMode minFilter = TextureFilterMode::Linear,
@@ -35,6 +44,10 @@ namespace MikuMikuWorld
 		static int getRootParticleIdByName(std::string name);
 
 		static void removeAllParticleEffects();
+
+		static void addWarning(const std::string& type, const std::string& path, const std::string& msg);
+		static void clearWarnings();
+		static bool hasWarnings();
 
 	  private:
 		static int nextParticleId;

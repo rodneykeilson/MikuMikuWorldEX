@@ -1,4 +1,5 @@
 #pragma once
+#include <string>
 
 namespace MikuMikuWorld
 {
@@ -8,6 +9,9 @@ namespace MikuMikuWorld
 	{
 	  private:
 		int hispeeds, taps, flicks, holds, guides, steps, traces, total, combo;
+		float nps;  // Notes per second
+		float estimatedLevel;
+		float durationSeconds;
 
 		void resetCounts();
 		void resetCombo();
@@ -17,6 +21,7 @@ namespace MikuMikuWorld
 
 		void calculateStats(const Score& score);
 		void calculateCombo(const Score& score);
+		void calculateNPS(const Score& score);
 		void reset();
 
 		int getHiSpeeds() const { return hispeeds; }
@@ -28,5 +33,9 @@ namespace MikuMikuWorld
 		int getTraces() const { return traces; }
 		int getTotal() const { return total; }
 		int getCombo() const { return combo; }
+		float getNPS() const { return nps; }
+		float getEstimatedLevel() const { return estimatedLevel; }
+		float getDurationSeconds() const { return durationSeconds; }
+		std::string getEstimatedDifficulty() const;
 	};
 }

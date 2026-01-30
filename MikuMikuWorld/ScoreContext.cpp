@@ -1421,6 +1421,109 @@ namespace MikuMikuWorld
 		pushHistory("Convert slides into traces", prev, score);
 	}
 
+	void ScoreContext::setHoldStartEndTypes(std::optional<HoldNoteType> startType, std::optional<HoldNoteType> endType)
+	{
+		if (selectedNotes.empty())
+			return;
+
+		Score prev = score;
+		bool edit = false;
+
+		for (id_t id : selectedNotes)
+		{
+			auto it = score.notes.find(id);
+			if (it == score.notes.end())
+				continue;
+
+			Note& note = it->second;
+			if (note.getType() != NoteType::Hold)
+				continue;
+
+			auto holdIt = score.holdNotes.find(id);
+			if (holdIt == score.holdNotes.end())
+				continue;
+
+			HoldNote& holdNote = holdIt->second;
+
+			// Skip guides
+			if (holdNote.isGuide())
+				continue;
+
+			if (startType.has_value())
+			{
+				if (startType.value() != HoldNoteType::Normal)
+					note.friction = false;
+				holdNote.startType = startType.value();
+				edit = true;
+			}
+
+			if (endType.has_value())
+			{
+				Note& endNote = score.notes.at(holdNote.end);
+				if (endType.value() != HoldNoteType::Normal)
+				{
+					endNote.flick = FlickType::None;
+					endNote.friction = false;
+				}
+				holdNote.endType = endType.value();
+				edit = true;
+			}
+		}
+
+		if (edit)
+			pushHistory("Change hold types", prev, score);
+	}
+
+	void ScoreContext::convertHoldPointsToTraces(bool convertStarts, bool convertEnds)
+	{
+		if (selectedNotes.empty())
+			return;
+
+		Score prev = score;
+		bool edit = false;
+
+		for (id_t id : selectedNotes)
+		{
+			auto it = score.notes.find(id);
+			if (it == score.notes.end())
+				continue;
+
+			Note& note = it->second;
+			if (note.getType() != NoteType::Hold)
+				continue;
+
+			auto holdIt = score.holdNotes.find(id);
+			if (holdIt == score.holdNotes.end())
+				continue;
+
+			HoldNote& holdNote = holdIt->second;
+
+			// Skip guides
+			if (holdNote.isGuide())
+				continue;
+
+			if (convertStarts && holdNote.startType == HoldNoteType::Normal)
+			{
+				note.friction = true;
+				edit = true;
+			}
+
+			if (convertEnds)
+			{
+				Note& endNote = score.notes.at(holdNote.end);
+				if (holdNote.endType == HoldNoteType::Normal)
+				{
+					endNote.friction = true;
+					endNote.flick = FlickType::None;
+					edit = true;
+				}
+			}
+		}
+
+		if (edit)
+			pushHistory("Convert hold points to traces", prev, score);
+	}
+
 	void ScoreContext::lerpHiSpeeds(int division, EaseType ease)
 	{
 		if (selectedHiSpeedChanges.size() < 2)

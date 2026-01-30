@@ -117,6 +117,14 @@ namespace MikuMikuWorld
 			UI::addReadOnlyProperty(getString("total"), context.scoreStats.getTotal());
 			UI::addReadOnlyProperty(getString("combo"), context.scoreStats.getCombo());
 			UI::endPropertyColumns();
+			
+			ImGui::Separator();
+			ImGui::TextColored(ImVec4(0.4f, 0.8f, 1.0f, 1.0f), ICON_FA_TACHOMETER_ALT " %s", getString("difficulty_estimate"));
+			UI::beginPropertyColumns();
+			UI::addReadOnlyProperty(getString("nps"), IO::formatString("%.2f", context.scoreStats.getNPS()));
+			UI::addReadOnlyProperty(getString("estimated_level"), context.scoreStats.getEstimatedDifficulty());
+			UI::addReadOnlyProperty(getString("duration"), IO::formatString("%.1f %s", context.scoreStats.getDurationSeconds(), getString("seconds")));
+			UI::endPropertyColumns();
 		}
 	}
 
@@ -148,6 +156,10 @@ namespace MikuMikuWorld
 		}
 		catch (const std::out_of_range& e)
 		{
+			// Clear invalid selections to prevent repeated errors
+			context.selectedNotes.clear();
+			context.selectedHiSpeedChanges.clear();
+			printf("Warning: Invalid note selection detected and cleared: %s\n", e.what());
 			ImGui::Text("%s", getString("note_properties_not_selected"));
 			return;
 		}
@@ -1337,6 +1349,15 @@ namespace MikuMikuWorld
 						UI::addIntProperty(getString("auto_save_interval"),
 						                   config.autoSaveInterval);
 						UI::addIntProperty(getString("auto_save_count"), config.autoSaveMaxCount);
+						UI::endPropertyColumns();
+					}
+
+					if (ImGui::CollapsingHeader(getString("session"),
+					                            ImGuiTreeNodeFlags_DefaultOpen))
+					{
+						UI::beginPropertyColumns();
+						UI::addCheckboxProperty(getString("restore_last_session"),
+						                        config.restoreLastSession);
 						UI::endPropertyColumns();
 					}
 

@@ -66,6 +66,7 @@ theme, Tema
 base_theme, Tema base
 theme_light, Claro
 theme_dark, Escuro
+theme_roden, Roden
 custom_color, Cor customizada
 timeline, Timeline
 match_notes_size_to_timeline, Ajustar tamanho das notas á Timeline

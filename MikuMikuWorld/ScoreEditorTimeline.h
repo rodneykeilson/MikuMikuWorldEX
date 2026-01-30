@@ -115,6 +115,11 @@ namespace MikuMikuWorld
 		bool dragging{ false };
 		bool insertingHold{ false };
 
+		// Lasso selection
+		bool lassoMode{ false };
+		bool lassoActive{ false };
+		std::vector<ImVec2> lassoPoints;
+
 		float time{};
 		float timeLastFrame{};
 		float playStartTime{};
