@@ -880,6 +880,17 @@ std::array<DirectX::XMFLOAT4, 4> ScorePreviewBackground::DefaultJacket::getRight
 					spr_y2 = segmentSprite.getY2();
 				}
 
+				// Calculate alpha for guide fade in/out
+				float segmentAlpha = alpha;
+				if (segment.isGuide && segment.fadeType != FadeType::None)
+				{
+					float fadeProgress = lerpD(segmentStartProgress, segmentEndProgress, from_percentage);
+					if (segment.fadeType == FadeType::In)
+						segmentAlpha *= fadeProgress; // 0 -> 1
+					else if (segment.fadeType == FadeType::Out)
+						segmentAlpha *= (1.0f - fadeProgress); // 1 -> 0
+				}
+
 				// Hold animation pulsing effect - only for holds, not guides
 				if (!segment.isGuide && config.pvHoldAnimation && isHoldActivated && isArrayIndexInBounds(sprIndex - 1, texture.sprites))
 				{
@@ -888,11 +899,11 @@ std::array<DirectX::XMFLOAT4, 4> ScorePreviewBackground::DefaultJacket::getRight
 					double delta_tm = current_tm - segment.activeTime;
 					float normalAlpha = (std::cos(delta_tm * NUM_PI * 2) + 2) / 3.;
 
-					Adapters::drawQuad(renderer, vPos, model, texture, spr_x1, spr_x2, spr_y1, spr_y2, defaultTint.scaleAlpha(alpha * normalAlpha), zIndex);
-					Adapters::drawQuad(renderer, vPos, model, texture, spr_x1, spr_x2, spr_y1 + norm2ActiveOffset, spr_y2 + norm2ActiveOffset, defaultTint.scaleAlpha(alpha * (1.f - normalAlpha)), zIndex);
+					Adapters::drawQuad(renderer, vPos, model, texture, spr_x1, spr_x2, spr_y1, spr_y2, defaultTint.scaleAlpha(segmentAlpha * normalAlpha), zIndex);
+					Adapters::drawQuad(renderer, vPos, model, texture, spr_x1, spr_x2, spr_y1 + norm2ActiveOffset, spr_y2 + norm2ActiveOffset, defaultTint.scaleAlpha(segmentAlpha * (1.f - normalAlpha)), zIndex);
 				}
 				else
-					Adapters::drawQuad(renderer, vPos, model, texture, spr_x1, spr_x2, spr_y1, spr_y2, defaultTint.scaleAlpha(alpha), zIndex);
+					Adapters::drawQuad(renderer, vPos, model, texture, spr_x1, spr_x2, spr_y1, spr_y2, defaultTint.scaleAlpha(segmentAlpha), zIndex);
 
 				from_percentage = to_percentage;
 				stepStart_stm = stepEnd_stm;

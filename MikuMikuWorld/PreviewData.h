@@ -40,6 +40,7 @@ namespace MikuMikuWorld::Engine
 		EaseType ease;
 		bool isGuide;
 		GuideColor guideColor;
+		FadeType fadeType;
 		ptrdiff_t tailStepIndex;
 		double headTime, tailTime;
 		float headLeft, headRight;

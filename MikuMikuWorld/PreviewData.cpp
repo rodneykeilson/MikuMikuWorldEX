@@ -183,6 +183,7 @@ namespace MikuMikuWorld::Engine
 				head.ease,
 				holdNote.isGuide(),
 				holdNote.guideColor,
+				holdNote.fadeType,
 				tailIdx,
 				head.time, tail.time,
 				head.left, head.right,
