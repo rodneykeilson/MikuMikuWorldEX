@@ -865,10 +865,12 @@ std::array<DirectX::XMFLOAT4, 4> ScorePreviewBackground::DefaultJacket::getRight
 				float spr_x1, spr_x2, spr_y1, spr_y2;
 				if (segment.isGuide)
 				{
-					spr_x1 = segmentSprite.getX1() + GUIDE_XCUTOFF;
-					spr_x2 = segmentSprite.getX2() - GUIDE_XCUTOFF;
-					spr_y1 = lerp(segmentSprite.getY2() - GUIDE_Y_BOTTOM_CUTOFF, segmentSprite.getY1() + GUIDE_Y_TOP_CUTOFF, lerpD(holdStartProgress, holdEndProgress, from_percentage));
-					spr_y2 = lerp(segmentSprite.getY2() - GUIDE_Y_BOTTOM_CUTOFF, segmentSprite.getY1() + GUIDE_Y_TOP_CUTOFF, lerpD(holdStartProgress, holdEndProgress, to_percentage));
+					// guideColors texture has 1-pixel-tall sprites, use coordinates directly
+					// No Y cutoff manipulation - the texture is a simple horizontal gradient per color
+					spr_x1 = segmentSprite.getX1();
+					spr_x2 = segmentSprite.getX2();
+					spr_y1 = segmentSprite.getY1();
+					spr_y2 = segmentSprite.getY2();
 				}
 				else
 				{

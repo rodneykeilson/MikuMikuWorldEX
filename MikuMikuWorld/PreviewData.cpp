@@ -64,6 +64,11 @@ namespace MikuMikuWorld::Engine
 			auto visual_tm = getNoteVisualTime(note, score, noteSpeed);
 			drawingNotes.push_back(DrawingNote{note.ID, note.layer, visual_tm});
 
+			// MMWCC: Skip damage notes from simultaneous line calculation
+			// Damage notes should not have sim lines connecting them
+			if (type == NoteType::Damage)
+				continue;
+
 			// Find the max and min lane within the same height (visual_tm.max)
 			float center = getNoteCenter(note);
 			auto&& [it, has_emplaced] = simBuilder.try_emplace(note.tick, Range{center, center});
