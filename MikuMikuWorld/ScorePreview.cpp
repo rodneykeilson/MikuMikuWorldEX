@@ -880,7 +880,8 @@ std::array<DirectX::XMFLOAT4, 4> ScorePreviewBackground::DefaultJacket::getRight
 					spr_y2 = segmentSprite.getY2();
 				}
 
-				if (config.pvHoldAnimation && isHoldActivated && isArrayIndexInBounds(sprIndex - 1, texture.sprites))
+				// Hold animation pulsing effect - only for holds, not guides
+				if (!segment.isGuide && config.pvHoldAnimation && isHoldActivated && isArrayIndexInBounds(sprIndex - 1, texture.sprites))
 				{
 					const Sprite& activeSprite = texture.sprites[sprIndex - 1];
 					const int norm2ActiveOffset = activeSprite.getY1() - segmentSprite.getY1();

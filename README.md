@@ -1,38 +1,42 @@
 **English** / [日本語](./README.ja.md)
 
-> [!WARNING]
-> As Chart Cyanvas ended its service, and I (@sevenc-nanashi) am no longer interested in sekai fanmade community, **this repository is no longer maintained.**
-> You can check the forks of this repo here: <https://github.com/sevenc-nanashi/MikuMikuWorld4CC/forks>
+# MikuMikuWorldEX
 
-# MikuMikuWorld for Chart Cyanvas
+A chart editor for Project Sekai, based on [MikuMikuWorld4CC](https://github.com/sevenc-nanashi/MikuMikuWorld4CC) by sevenc-nanashi, with the preview system from the original [MikuMikuWorld](https://github.com/crash5band/MikuMikuWorld) by crash5band.
 
-[![](https://byob.yarr.is/sevenc-nanashi/MikuMikuWorld4CC/coverage-en)](./MikuMikuWorld/res/i18n/en.csv)
-[![](https://byob.yarr.is/sevenc-nanashi/MikuMikuWorld4CC/coverage-ja)](./MikuMikuWorld/res/i18n/ja.csv)
-[![](https://byob.yarr.is/sevenc-nanashi/MikuMikuWorld4CC/coverage-es)](./MikuMikuWorld/res/i18n/es.csv)
-[![](https://byob.yarr.is/sevenc-nanashi/MikuMikuWorld4CC/coverage-kr)](./MikuMikuWorld/res/i18n/kr.csv)
-[![](https://byob.yarr.is/sevenc-nanashi/MikuMikuWorld4CC/coverage-ru)](./MikuMikuWorld/res/i18n/ru.csv)
-[![](https://byob.yarr.is/sevenc-nanashi/MikuMikuWorld4CC/coverage-vi)](./MikuMikuWorld/res/i18n/vi.csv)
-[![](https://byob.yarr.is/sevenc-nanashi/MikuMikuWorld4CC/coverage-tr)](./MikuMikuWorld/res/i18n/tr.csv)
-[![](https://byob.yarr.is/sevenc-nanashi/MikuMikuWorld4CC/coverage-pt)](./MikuMikuWorld/res/i18n/pt.csv)
+## About
 
-Fork of [MikuMikuWorld](https://github.com/crash5band/MikuMikuWorld) for [Chart Cyanvas](https://github.com/sevenc-nanashi/chart_cyanvas).
+MikuMikuWorldEX combines the extended charting features from MikuMikuWorld4CC (the Chart Cyanvas fork) with the real-time preview system from the original MikuMikuWorld. This allows chart creators to preview their charts with accurate note rendering, particle effects, and audio synchronization.
 
-## Added Features
+## Features
 
-In addition to the original features of MikuMikuWorld, the following features are added:
+All features from MikuMikuWorld4CC are supported:
 
 - Damage notes
 - Extended lanes
-- Colored guides
-- New ease types
-- Interpolate Hi-Speeds feature
-- Repeat Hold Mids feature
+- Colored guides (8 colors)
+- New ease types (EaseInOut, EaseOutIn)
+- Hi-Speed interpolation
+- Repeat Hold Mids
 - Note Properties panel
-- Support for decimal note lane and width
+- Decimal note lane and width support
 
-## Translations
+Additional features in MikuMikuWorldEX:
 
-If you want to contribute a translation, please see [the guide](./TRANSLATION.md).
+- Real-time preview with particle effects and audio
+- Preview supports all MMWCC note types including damage notes and colored guides
+
+## Planned Features
+
+- Additional editor quality-of-life improvements
+- NEXTSekai note support
+
+## Credits
+
+- [crash5band](https://github.com/crash5band) - Original MikuMikuWorld and preview system
+- [sevenc-nanashi](https://github.com/sevenc-nanashi) - MikuMikuWorld4CC fork with extended features
+
+### Translations (from MikuMikuWorld4CC)
 
 - 日本語 (Japanese) by @sevenc_nanashi
 - Español (Spanish) by @mi.honesta.reaccion
@@ -40,19 +44,27 @@ If you want to contribute a translation, please see [the guide](./TRANSLATION.md
 - Tiếng Việt (Vietnamese) by @uwulovecrosshand
 - 한글 (Korean) by @fjordic
 - Türkçe (Turkish) by @sctech-tr
-- Português do Brasil (Brazillian Portuguese) by @\_\_noradrenaline
+- Português do Brasil (Brazilian Portuguese) by @\_\_noradrenaline
 
 ## Requirements
 
-- 64-bit Windows 10 or higher\*.
-- GPU supporting OpenGL 3.3 with latest drivers installed.
+- 64-bit Windows 10 or later
+- GPU with OpenGL 3.3 support and up-to-date drivers
 
-\*Earlier versions of Windows may work but not tested.
+Earlier versions of Windows may work but are not officially supported.
 
 ## Download
 
-The latest version can be downloaded [here](https://github.com/sevenc-nanashi/MikuMikuWorld/releases/latest/download/MikuMikuWorld.zip).
+The latest version can be downloaded from the [Releases](https://github.com/vewaxio/MikuMikuWorldEX/releases) page.
 
-## Screenshot
+## Building
 
-TODO
+Requires Visual Studio 2019 or later with C++ desktop development workload.
+
+1. Clone the repository
+2. Open `MikuMikuWorld.sln`
+3. Build in Release x64 configuration
+
+## License
+
+See [LICENSE](./LICENSE) for details.
