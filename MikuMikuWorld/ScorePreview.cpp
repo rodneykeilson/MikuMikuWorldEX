@@ -598,7 +598,12 @@ std::array<DirectX::XMFLOAT4, 4> ScorePreviewBackground::DefaultJacket::getRight
 			
 			if (noteScaledTm < note.visualTime.min || noteScaledTm > note.visualTime.max)
 				continue;
-			const Note& noteData = context.score.notes.at(note.refID);
+
+			auto it = context.score.notes.find(note.refID);
+			if (it == context.score.notes.end())
+				continue;
+
+			const Note& noteData = it->second;
 			double y = Engine::approach(note.visualTime.min, note.visualTime.max, noteScaledTm);
 			float l = Engine::laneToLeft(noteData.lane), r = Engine::laneToLeft(noteData.lane) + noteData.width;
 			
@@ -677,7 +682,12 @@ std::array<DirectX::XMFLOAT4, 4> ScorePreviewBackground::DefaultJacket::getRight
 			double scaled_tm = getScaledTime(tick.layer);
 			if (scaled_tm < tick.visualTime.min || scaled_tm > tick.visualTime.max)
 				continue;
-			int sprIndex = getNoteSpriteIndex(context.score.notes.at(tick.refID));
+
+			auto it = context.score.notes.find(tick.refID);
+			if (it == context.score.notes.end())
+				continue;
+
+			int sprIndex = getNoteSpriteIndex(it->second);
 			if (!isArrayIndexInBounds(sprIndex, texture.sprites))
 				continue;
 			const Sprite& sprite = texture.sprites[sprIndex];
@@ -726,28 +736,35 @@ std::array<DirectX::XMFLOAT4, 4> ScorePreviewBackground::DefaultJacket::getRight
 			if ((std::min(segment.headTime, segment.tailTime) > visible_stm && segment.startTime > current_tm) || current_tm >= segment.endTime)
 				continue;
 
-			const Note& holdEnd = context.score.notes.at(segment.endID);
-			const Note& holdStart = context.score.notes.at(segment.holdStartID);
+			auto endIt = context.score.notes.find(segment.endID);
+			auto startIt = context.score.notes.find(segment.holdStartID);
+			if (endIt == context.score.notes.end() || startIt == context.score.notes.end())
+				continue;
+
+			const Note& holdEnd = endIt->second;
+			const Note& holdStart = startIt->second;
 			float holdStartCenter = Engine::getNoteCenter(holdStart) * mirror;
 			bool isHoldActivated = current_tm >= segment.activeTime;
 			bool isSegmentActivated = current_tm >= segment.startTime;
 
-			// Use correct texture based on guide vs hold
-			int textureID = noteSkins.getItemIndex(segment.isGuide ? NoteSkinItem::TouchLine : NoteSkinItem::LongNote);
-			if (textureID == -1)
-				continue;
-			const Texture& texture = ResourceManager::textures[textureID];
-			
-			// MMWCC: For guides, use the guide color; for holds, use critical/non-critical
+			// Use guideColors texture for guides (has 8 color variants), or hold texture for holds
+			int textureID;
 			int sprIndex;
 			if (segment.isGuide)
 			{
+				// MMWCC: Use guideColors texture which has 8 sprites for the 8 guide colors
+				textureID = noteTextures.guideColors;
 				sprIndex = static_cast<int>(segment.guideColor);
 			}
 			else
 			{
+				textureID = noteSkins.getItemIndex(NoteSkinItem::LongNote);
 				sprIndex = holdStart.critical ? 3 : 1;
 			}
+			
+			if (textureID == -1)
+				continue;
+			const Texture& texture = ResourceManager::textures[textureID];
 			
 			if (!isArrayIndexInBounds(sprIndex, texture.sprites))
 				continue;
@@ -1151,7 +1168,13 @@ std::array<DirectX::XMFLOAT4, 4> ScorePreviewBackground::DefaultJacket::getRight
 		const TimeSignature& ts = context.score.timeSignatures[findTimeSignature(currentMeasure, context.score.timeSignatures)];
 		const Tempo& tempo = getTempoAt(context.currentTick, context.score.tempoChanges);
 		id_t hiSpeedIdx = findHighSpeedChange(context.currentTick, context.score.hiSpeedChanges, context.selectedLayer);
-		float speed = (hiSpeedIdx == static_cast<id_t>(-1) ? 1.0f : context.score.hiSpeedChanges.at(hiSpeedIdx).speed);
+		float speed = 1.0f;
+		if (hiSpeedIdx != static_cast<id_t>(-1))
+		{
+			auto hsIt = context.score.hiSpeedChanges.find(hiSpeedIdx);
+			if (hsIt != context.score.hiSpeedChanges.end())
+				speed = hsIt->second.speed;
+		}
 
 		char rhythmString[256];
 		snprintf(rhythmString, sizeof(rhythmString), "%02d:%02d:%02d|%.2fs|%d/%d|%g BPM|%sx",

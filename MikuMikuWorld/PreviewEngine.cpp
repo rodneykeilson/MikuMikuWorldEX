@@ -98,10 +98,17 @@ namespace MikuMikuWorld::Engine
 
 	std::pair<float, float> getHoldStepBound(const Note& note, const Score& score)
 	{
-		auto& holdNotes = score.holdNotes.at(note.parentID);
+		auto holdIt = score.holdNotes.find(note.parentID);
+		if (holdIt == score.holdNotes.end())
+			return getNoteBound(note, false);
+
+		const auto& holdNotes = holdIt->second;
 		int curStepIdx = findHoldStep(holdNotes, note.ID);
 		
 		// MMWCC: steps can use canEase() method if it's in HoldStep
+		if (curStepIdx == -1 || curStepIdx >= holdNotes.steps.size())
+			return getNoteBound(note, false);
+
 		bool canEase = holdNotes.steps[curStepIdx].type != HoldStepType::Skip;
 		if (canEase)
 			return getNoteBound(note, false);
@@ -113,12 +120,22 @@ namespace MikuMikuWorld::Engine
 		const HoldStep& lastHoldStep = startStepIdx != 0 ? holdNotes.steps[startStepIdx - 1] : holdNotes.start;
 		auto easeFunc = getEaseFunction(lastHoldStep.ease);
 
-		const Note& startNote = score.notes.at(lastHoldStep.ID);
+		auto startNoteIt = score.notes.find(lastHoldStep.ID);
+		if (startNoteIt == score.notes.end())
+			return getNoteBound(note, false);
+
+		const Note& startNote = startNoteIt->second;
 		auto [leftStart, rightStart] = getNoteBound(startNote, false);
 
 		auto it = std::find_if(holdNotes.steps.begin() + curStepIdx, holdNotes.steps.end(), 
 			[](const HoldStep& step) { return step.type != HoldStepType::Skip; });
-		const Note& endNote = score.notes.at(it == holdNotes.steps.end() ? holdNotes.end : it->ID);
+
+		id_t endID = it == holdNotes.steps.end() ? holdNotes.end : it->ID;
+		auto endNoteIt = score.notes.find(endID);
+		if (endNoteIt == score.notes.end())
+			return getNoteBound(note, false);
+
+		const Note& endNote = endNoteIt->second;
 		auto [leftStop, rightStop] = getNoteBound(endNote, false);
 
 		float start_tm = accumulateDuration(startNote.tick, TICKS_PER_BEAT, score.tempoChanges);
@@ -134,20 +151,47 @@ namespace MikuMikuWorld::Engine
 
 	std::pair<float, float> getHoldSegmentBound(const Note& note, const Score& score, int curTick)
 	{
-		const HoldNote& holdNotes = score.holdNotes.at(note.ID);
+		auto holdIt = score.holdNotes.find(note.ID);
+		if (holdIt == score.holdNotes.end())
+			return getNoteBound(note, false);
+
+		const HoldNote& holdNotes = holdIt->second;
 		auto curStepIt = std::lower_bound(holdNotes.steps.begin(), holdNotes.steps.end(), curTick, 
-			[&score](const HoldStep& step, int tick) { return score.notes.at(step.ID).tick < tick; });
+			[&score](const HoldStep& step, int tick) {
+				auto it = score.notes.find(step.ID);
+				return (it != score.notes.end()) ? (it->second.tick < tick) : false;
+			});
 		auto startStepIt = std::find_if(std::make_reverse_iterator(curStepIt), holdNotes.steps.rend(), 
 			[](const HoldStep& step) { return step.type != HoldStepType::Skip; });
 		const HoldStep& startHoldStep = startStepIt == holdNotes.steps.rend() ? holdNotes.start : *startStepIt;
 
-		const Note& startNote = startStepIt == holdNotes.steps.rend() ? note : score.notes.at(startStepIt->ID);
+		Note const *startNotePtr = nullptr;
+		if (startStepIt == holdNotes.steps.rend())
+		{
+			startNotePtr = &note;
+		}
+		else
+		{
+			auto it = score.notes.find(startStepIt->ID);
+			if (it != score.notes.end())
+				startNotePtr = &it->second;
+		}
+
+		if (!startNotePtr) return getNoteBound(note, false);
+		const Note& startNote = *startNotePtr;
+
 		if (startNote.tick == curTick) return getNoteBound(startNote, false);
 		auto [leftStart, rightStart] = getNoteBound(startNote, false);
 
 		auto end = std::find_if(curStepIt, holdNotes.steps.end(), 
 			[](const HoldStep& step) { return step.type != HoldStepType::Skip; });
-		const Note& endNote = score.notes.at(end == holdNotes.steps.end() ? holdNotes.end : end->ID);
+		
+		id_t endID = end == holdNotes.steps.end() ? holdNotes.end : end->ID;
+		auto endNoteIt = score.notes.find(endID);
+		if (endNoteIt == score.notes.end())
+			return getNoteBound(startNote, false);
+
+		const Note& endNote = endNoteIt->second;
 		if (endNote.tick == curTick) return getNoteBound(endNote, false);
 		auto [leftStop, rightStop] = getNoteBound(endNote, false);
 		auto easeFunc = getEaseFunction(startHoldStep.ease);
@@ -162,4 +206,5 @@ namespace MikuMikuWorld::Engine
 			easeFunc(rightStart, rightStop, progress)
 		);
 	}
+
 }

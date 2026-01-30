@@ -171,12 +171,24 @@ namespace MikuMikuWorld
 		preset.name = name;
 		preset.description = desc;
 
-		int baseTick =
-		    score.notes
-		        .at(*std::min_element(
-		            selectedNotes.begin(), selectedNotes.end(), [&score](int id1, int id2)
-		            { return score.notes.at(id1).tick < score.notes.at(id2).tick; }))
-		        .tick;
+		auto minNoteIt = std::min_element(
+			selectedNotes.begin(), selectedNotes.end(), [&score](id_t id1, id_t id2)
+			{ 
+				auto it1 = score.notes.find(id1);
+				auto it2 = score.notes.find(id2);
+				if (it1 == score.notes.end()) return false;
+				if (it2 == score.notes.end()) return true;
+				return it1->second.tick < it2->second.tick; 
+			});
+
+		int baseTick = 0;
+		if (minNoteIt != selectedNotes.end())
+		{
+			auto it = score.notes.find(*minNoteIt);
+			if (it != score.notes.end())
+				baseTick = it->second.tick;
+		}
+
 		preset.data =
 		    jsonIO::noteSelectionToJson(score, selectedNotes, selectedHiSpeedChanges, baseTick);
 

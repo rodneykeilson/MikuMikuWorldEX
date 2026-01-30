@@ -182,6 +182,10 @@ namespace MikuMikuWorld
 		const std::unordered_map<id_t, HiSpeedChange>& hispeeds,
 		int noteLayer)
 	{
+		// Handle empty BPM list
+		if (bpms.empty())
+			return 0.0;
+
 		// Build sorted list of hi-speeds for this note's layer
 		std::vector<HiSpeedChange> layerHiSpeeds;
 		for (auto& [id, hs] : hispeeds)
@@ -202,7 +206,8 @@ namespace MikuMikuWorld
 			int nxtSpdTick = prvSpd + 1 < static_cast<int>(layerHiSpeeds.size()) ? layerHiSpeeds[prvSpd + 1].tick : INT32_MAX;
 			int nxtTick = std::min({nxtBpmTick, nxtSpdTick, tick});
 
-			float currentBpm = bpms.at(prvBpm).bpm;
+			// Safe vector access with bounds check
+			float currentBpm = (prvBpm >= 0 && prvBpm < static_cast<int>(bpms.size())) ? bpms[prvBpm].bpm : 120.0f;
 			float currentSpd = prvSpd >= 0 ? layerHiSpeeds[prvSpd].speed : 1.0f;
 
 			// Negative speeds will correctly produce negative visual offsets

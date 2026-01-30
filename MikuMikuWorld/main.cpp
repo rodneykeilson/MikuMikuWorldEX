@@ -17,10 +17,8 @@ int main()
 		return 1;
 	}
 
-#ifndef DEBUG
 	try
 	{
-#endif
 		std::string dir = IO::File::getFilepath(IO::wideStringToMb(args[0]));
 		mmw::Result result = app.initialize(dir);
 
@@ -32,7 +30,20 @@ int main()
 
 		app.handlePendingOpenFiles();
 		app.run();
-#ifndef DEBUG
+	}
+	catch (const std::out_of_range& ex)
+	{
+		// Capture stack trace for map access errors
+		std::string msg =
+		    std::string(
+		        "MAP ACCESS ERROR - Invalid key in map/vector\n\n")
+		        .append("Error: ").append(ex.what())
+		        .append("\n\nThis crash was caused by accessing a non-existent map key or vector index.")
+		        .append("\nPlease report this with your score file.")
+		        .append("\n\nApplication Version: ")
+		        .append(mmw::Application::getAppVersion());
+
+		IO::messageBox(APP_NAME, msg, IO::MessageBoxButtons::Ok, IO::MessageBoxIcon::Error);
 	}
 	catch (const std::exception& ex)
 	{
@@ -45,7 +56,6 @@ int main()
 
 		IO::messageBox(APP_NAME, msg, IO::MessageBoxButtons::Ok, IO::MessageBoxIcon::Error);
 	}
-#endif
 
 	app.dispose();
 	return 0;

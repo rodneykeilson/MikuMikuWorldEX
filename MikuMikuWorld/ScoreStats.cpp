@@ -31,8 +31,9 @@ namespace MikuMikuWorld
 
 		holds = std::count_if(score.notes.begin(), score.notes.end(),
 		                      [&](const auto& n) {
-			                      return n.second.getType() == NoteType::Hold &&
-			                             !score.holdNotes.at(n.first).isGuide();
+			                      if (n.second.getType() != NoteType::Hold) return false;
+			                      auto it = score.holdNotes.find(n.first);
+			                      return it != score.holdNotes.end() && !it->second.isGuide();
 		                      });
 
 		steps =
@@ -41,8 +42,9 @@ namespace MikuMikuWorld
 
 		guides = std::count_if(score.notes.begin(), score.notes.end(),
 		                       [&](const auto& n) {
-			                       return n.second.getType() == NoteType::Hold &&
-			                              score.holdNotes.at(n.first).isGuide();
+			                       if (n.second.getType() != NoteType::Hold) return false;
+			                       auto it = score.holdNotes.find(n.first);
+			                       return it != score.holdNotes.end() && it->second.isGuide();
 		                       });
 
 		flicks = std::count_if(score.notes.begin(), score.notes.end(),
@@ -81,8 +83,13 @@ namespace MikuMikuWorld
 			                       [](const HoldStep& step)
 			                       { return step.type == HoldStepType::Hidden; });
 
-			int startTick = score.notes.at(id).tick;
-			int endTick = score.notes.at(hold.end).tick;
+			auto startIt = score.notes.find(id);
+			auto endIt = score.notes.find(hold.end);
+			if (startIt == score.notes.end() || endIt == score.notes.end())
+				continue;
+
+			int startTick = startIt->second.tick;
+			int endTick = endIt->second.tick;
 			int eighthTick = startTick;
 
 			eighthTick += halfBeat;

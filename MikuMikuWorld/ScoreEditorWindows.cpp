@@ -596,7 +596,6 @@ namespace MikuMikuWorld
 		}
 		UI::endPropertyColumns();
 	}
-
 	void PresetsWindow::update(ScoreContext& context, PresetManager& presetManager)
 	{
 		if (ImGui::Begin(IMGUI_TITLE(ICON_FA_DRAFTING_COMPASS, "presets")))
@@ -1810,10 +1809,10 @@ namespace MikuMikuWorld
 				context.pushHistory("Merge Layer", prev, context.score);
 			}
 
-			if (toggleHideIndex != -1)
+			if (toggleHideIndex != -1 && toggleHideIndex < static_cast<int>(context.score.layers.size()))
 			{
 				Score prev = context.score;
-				auto& layer = context.score.layers.at(toggleHideIndex);
+				auto& layer = context.score.layers[toggleHideIndex];
 				layer.hidden = !layer.hidden;
 				context.pushHistory("Toggle Hide Layer", prev, context.score);
 			}

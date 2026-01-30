@@ -118,11 +118,15 @@ namespace IO
 
 	bool startsWith(const std::string_view& line, const std::string_view& key)
 	{
+		if (line.size() < key.size())
+			return false;
 		return std::equal(key.begin(), key.end(), line.begin());
 	}
 
 	bool endsWith(const std::string_view& line, const std::string_view& key)
 	{
+		if (line.size() < key.size())
+			return false;
 		return std::equal(key.rbegin(), key.rend(), line.rbegin());
 	}
 
@@ -167,8 +171,14 @@ namespace IO
 		std::pair<std::string, std::string> values;
 		size_t firstDelim = line.find_first_of(delim);
 		size_t end = line.length() - 1;
-		values =
-		    std::make_pair(line.substr(0, firstDelim), line.substr(firstDelim + 1));
+		if (firstDelim == std::string::npos)
+		{
+			values = std::make_pair(line, std::string{});
+		}
+		else
+		{
+			values = std::make_pair(line.substr(0, firstDelim), line.substr(firstDelim + 1));
+		}
 		return values;
 	}
 

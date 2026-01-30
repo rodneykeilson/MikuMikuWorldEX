@@ -409,7 +409,13 @@ namespace MikuMikuWorld
 
 	Effect::Particle& ResourceManager::getParticleEffect(int id)
 	{
-		return particleIdMap.at(id);
+		auto it = particleIdMap.find(id);
+		if (it == particleIdMap.end())
+		{
+			static Effect::Particle dummy{};
+			return dummy;
+		}
+		return it->second;
 	}
 
 	int ResourceManager::getRootParticleIdByName(std::string name)

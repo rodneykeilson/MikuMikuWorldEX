@@ -6,11 +6,9 @@ namespace MikuMikuWorld
 	class Camera
 	{
 	  private:
-		float yaw{ 0 }, pitch{ 0 }, fov{ 50.0f };
+		float yaw{ -90 }, pitch{ 0 }, fov{ 45.0f };
 		DirectX::XMVECTOR position{ 0.0f, 0.0f, -1.0f, 1.0f };
-		DirectX::XMVECTOR target{ 0.0f, 0.0f, 0.0f, 1.0f };
 		DirectX::XMVECTOR front{ 0.0f, 0.0f, 0.0f, 1.0f };
-		const DirectX::XMVECTOR up{ 0.0f, 1.0f, 0.0, 1.0f };
 		DirectX::XMMATRIX viewMatrix{ DirectX::XMMatrixIdentity() };
 		DirectX::XMMATRIX inverseViewMatrix{ DirectX::XMMatrixIdentity() };
 

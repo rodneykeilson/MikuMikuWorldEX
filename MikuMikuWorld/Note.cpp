@@ -69,8 +69,13 @@ namespace MikuMikuWorld
 		std::stable_sort(note.steps.begin(), note.steps.end(),
 		                 [&score](const HoldStep& s1, const HoldStep& s2)
 		                 {
-			                 const Note& n1 = score.notes.at(s1.ID);
-			                 const Note& n2 = score.notes.at(s2.ID);
+			                 auto it1 = score.notes.find(s1.ID);
+			                 auto it2 = score.notes.find(s2.ID);
+			                 if (it1 == score.notes.end() || it2 == score.notes.end())
+				                 return s1.ID < s2.ID;
+
+			                 const Note& n1 = it1->second;
+			                 const Note& n2 = it2->second;
 			                 return n1.tick == n2.tick ? n1.lane < n2.lane : n1.tick < n2.tick;
 		                 });
 	}
@@ -122,7 +127,7 @@ namespace MikuMikuWorld
 
 	int getCcNoteSpriteIndex(const Note& note)
 	{
-		int index;
+		int index = 0;
 
 		switch (note.getType())
 		{
@@ -131,6 +136,7 @@ namespace MikuMikuWorld
 			break;
 
 		default:
+			index = 0;
 			break;
 		}
 
@@ -162,7 +168,11 @@ namespace MikuMikuWorld
 		}
 		else if (note.getType() == NoteType::HoldMid)
 		{
-			const HoldNote& hold = score.holdNotes.at(note.parentID);
+			auto it = score.holdNotes.find(note.parentID);
+			if (it == score.holdNotes.end())
+				return "";
+
+			const HoldNote& hold = it->second;
 			int pos = findHoldStep(hold, note.ID);
 			if (pos != -1 && hold.steps[pos].type == HoldStepType::Hidden)
 				return "";

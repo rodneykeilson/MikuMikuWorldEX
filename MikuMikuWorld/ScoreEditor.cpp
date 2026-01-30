@@ -52,6 +52,9 @@ namespace MikuMikuWorld
 		autoSavePath = Application::getAppDir() + "auto_save";
 		autoSaveTimer.reset();
 
+		// MMWCC: Load note effects for preview
+		preview.loadNoteEffects(context.scorePreviewDrawData.effectView);
+
 #ifdef CPPHTTPLIB_OPENSSL_SUPPORT
 	std::thread fetchUpdateThread(
 	    [this]

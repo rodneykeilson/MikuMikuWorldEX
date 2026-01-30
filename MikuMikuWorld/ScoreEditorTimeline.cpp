@@ -13,6 +13,14 @@
 
 namespace MikuMikuWorld
 {
+	// Helper to safely check if a layer is hidden (handles out-of-bounds layer indices)
+	inline bool isLayerHidden(const std::vector<Layer>& layers, int layerIndex)
+	{
+		if (layerIndex < 0 || layerIndex >= static_cast<int>(layers.size()))
+			return false;  // Non-existent layers are treated as visible
+		return layers[layerIndex].hidden;
+	}
+
 	ScoreEditorTimeline* timelineInstance = nullptr;
 
 	void scrollTimeline(ScoreContext& context, const int tick)
@@ -494,7 +502,7 @@ namespace MikuMikuWorld
 			float yThreshold = (notesHeight * 0.5f) + 2.0f;
 			for (const auto& [id, note] : context.score.notes)
 			{
-				const bool layerHidden = context.score.layers.at(note.layer).hidden;
+				const bool layerHidden = isLayerHidden(context.score.layers, note.layer);
 				if ((layerHidden || note.layer != context.selectedLayer) && !context.showAllLayers)
 					continue;
 				float x1 = laneToPosition(note.lane);
@@ -981,7 +989,7 @@ namespace MikuMikuWorld
 		minNoteYDistance = INT_MAX;
 		for (auto& [id, note] : context.score.notes)
 		{
-			const bool layerHidden = context.score.layers.at(note.layer).hidden;
+			const bool layerHidden = isLayerHidden(context.score.layers, note.layer);
 			if (!isNoteVisible(note) || (layerHidden && !context.showAllLayers))
 				continue;
 
@@ -1007,11 +1015,16 @@ namespace MikuMikuWorld
 
 		for (auto& [id, hold] : context.score.holdNotes)
 		{
-			Note& start = context.score.notes.at(hold.start.ID);
-			Note& end = context.score.notes.at(hold.end);
+			auto startIt = context.score.notes.find(hold.start.ID);
+			auto endIt = context.score.notes.find(hold.end);
+			if (startIt == context.score.notes.end() || endIt == context.score.notes.end())
+				continue;
 
-			const bool startLayerHidden = context.score.layers.at(start.layer).hidden;
-			const bool endLayerHidden = context.score.layers.at(end.layer).hidden;
+			Note& start = startIt->second;
+			Note& end = endIt->second;
+
+			const bool startLayerHidden = isLayerHidden(context.score.layers, start.layer);
+			const bool endLayerHidden = isLayerHidden(context.score.layers, end.layer);
 			if ((startLayerHidden || endLayerHidden) && !context.showAllLayers)
 				continue;
 
@@ -1022,9 +1035,13 @@ namespace MikuMikuWorld
 
 			for (const auto& step : hold.steps)
 			{
-				Note& mid = context.score.notes.at(step.ID);
-				if (isNoteVisible(mid))
-					updateNote(context, edit, mid);
+				auto stepIt = context.score.notes.find(step.ID);
+				if (stepIt != context.score.notes.end())
+				{
+					Note& mid = stepIt->second;
+					if (isNoteVisible(mid))
+						updateNote(context, edit, mid);
+				}
 				if (skipUpdateAfterSortingSteps)
 					break;
 			}
@@ -1079,7 +1096,7 @@ namespace MikuMikuWorld
 		// draw hold step outlines
 		for (const auto& data : drawSteps)
 		{
-			const bool layerHidden = context.score.layers.at(data.layer).hidden;
+			const bool layerHidden = isLayerHidden(context.score.layers, data.layer);
 			if (layerHidden && !context.showAllLayers)
 				continue;
 
@@ -1391,8 +1408,13 @@ namespace MikuMikuWorld
 
 		for (const auto& [id, hold] : context.score.holdNotes)
 		{
-			const Note& start = context.score.notes.at(hold.start.ID);
-			const Note& end = context.score.notes.at(hold.end);
+			auto startIt = context.score.notes.find(hold.start.ID);
+			auto endIt = context.score.notes.find(hold.end);
+			if (startIt == context.score.notes.end() || endIt == context.score.notes.end())
+				continue;
+
+			const Note& start = startIt->second;
+			const Note& end = endIt->second;
 
 			// No need to search holds outside the cursor's reach
 			if (start.tick > tick || end.tick < tick)
@@ -1408,11 +1430,14 @@ namespace MikuMikuWorld
 
 			if (isArrayIndexInBounds(s2, hold.steps))
 			{
+				auto s2It = context.score.notes.find(hold.steps[s2].ID);
+				if (s2It == context.score.notes.end())
+					continue;
+
 				// Getting here means we found a non-skip step
 				if ((context.showAllLayers || start.layer == context.selectedLayer ||
-				     context.score.notes.at(hold.steps[s2].ID).layer == context.selectedLayer) &&
-				    isMouseInHoldPath(start, context.score.notes.at(hold.steps[s2].ID),
-				                      hold.start.ease, xt, yt))
+				     s2It->second.layer == context.selectedLayer) &&
+				    isMouseInHoldPath(start, s2It->second, hold.start.ease, xt, yt))
 					return id;
 
 				s1 = s2;
@@ -1420,23 +1445,30 @@ namespace MikuMikuWorld
 				{
 					if (hold.steps[s2].type != HoldStepType::Skip)
 					{
-						const Note& m1 = context.score.notes.at(hold.steps[s1].ID);
-						const Note& m2 = context.score.notes.at(hold.steps[s2].ID);
-						if ((context.showAllLayers || m1.layer == context.selectedLayer ||
-						     m2.layer == context.selectedLayer) &&
-						    isMouseInHoldPath(m1, m2, hold.steps[s1].ease, xt, yt))
-							return id;
+						auto m1It = context.score.notes.find(hold.steps[s1].ID);
+						auto m2It = context.score.notes.find(hold.steps[s2].ID);
+						if (m1It != context.score.notes.end() && m2It != context.score.notes.end())
+						{
+							const Note& m1 = m1It->second;
+							const Note& m2 = m2It->second;
+							if ((context.showAllLayers || m1.layer == context.selectedLayer ||
+							     m2.layer == context.selectedLayer) &&
+							    isMouseInHoldPath(m1, m2, hold.steps[s1].ease, xt, yt))
+								return id;
+						}
 
 						s1 = s2;
 					}
 				}
 
-				id_t nextId = hold.steps[s1].ID;
-				if ((context.showAllLayers || start.layer == context.selectedLayer ||
-				     context.score.notes.at(nextId).layer == context.selectedLayer) &&
-				    isMouseInHoldPath(context.score.notes.at(nextId), end, hold.steps[s1].ease, xt,
-				                      yt))
-					return id;
+				auto nextIt = context.score.notes.find(hold.steps[s1].ID);
+				if (nextIt != context.score.notes.end())
+				{
+					if ((context.showAllLayers || start.layer == context.selectedLayer ||
+					     nextIt->second.layer == context.selectedLayer) &&
+					    isMouseInHoldPath(nextIt->second, end, hold.steps[s1].ease, xt, yt))
+						return id;
+				}
 			}
 			else
 			{
@@ -1505,9 +1537,18 @@ namespace MikuMikuWorld
 				std::unordered_set<int> sortHolds = context.getHoldsFromSelection();
 				for (int id : sortHolds)
 				{
-					HoldNote& hold = context.score.holdNotes.at(id);
-					Note& start = context.score.notes.at(id);
-					Note& end = context.score.notes.at(hold.end);
+					auto holdIt = context.score.holdNotes.find(id);
+					auto startIt = context.score.notes.find(id);
+					if (holdIt == context.score.holdNotes.end() || startIt == context.score.notes.end())
+						continue;
+
+					HoldNote& hold = holdIt->second;
+					Note& start = startIt->second;
+
+					auto endIt = context.score.notes.find(hold.end);
+					if (endIt == context.score.notes.end())
+						continue;
+					Note& end = endIt->second;
 
 					if (start.tick > end.tick)
 					{
@@ -1521,25 +1562,32 @@ namespace MikuMikuWorld
 						sortHoldSteps(context.score, hold);
 
 						// Ensure hold steps are between the start and end
-						Note& firstMid = context.score.notes.at(hold.steps[0].ID);
-						if (start.tick > firstMid.tick)
+						auto firstMidIt = context.score.notes.find(hold.steps[0].ID);
+						if (firstMidIt != context.score.notes.end())
 						{
-							std::swap(start.tick, firstMid.tick);
-							std::swap(start.lane, firstMid.lane);
-							start.lane = std::clamp(start.lane, minLane, maxLane - start.width + 1);
-							firstMid.lane =
-							    std::clamp(firstMid.lane, minLane, maxLane - firstMid.width + 1);
+							Note& firstMid = firstMidIt->second;
+							if (start.tick > firstMid.tick)
+							{
+								std::swap(start.tick, firstMid.tick);
+								std::swap(start.lane, firstMid.lane);
+								start.lane = std::clamp(start.lane, minLane, maxLane - start.width + 1);
+								firstMid.lane =
+									std::clamp(firstMid.lane, minLane, maxLane - firstMid.width + 1);
+							}
 						}
 
-						Note& lastMid =
-						    context.score.notes.at(hold.steps[hold.steps.size() - 1].ID);
-						if (end.tick < lastMid.tick)
+						auto lastMidIt = context.score.notes.find(hold.steps[hold.steps.size() - 1].ID);
+						if (lastMidIt != context.score.notes.end())
 						{
-							std::swap(end.tick, lastMid.tick);
-							std::swap(end.lane, lastMid.lane);
-							lastMid.lane =
-							    std::clamp(lastMid.lane, minLane, maxLane - lastMid.width + 1);
-							end.lane = std::clamp(end.lane, minLane, maxLane - end.width + 1);
+							Note& lastMid = lastMidIt->second;
+							if (end.tick < lastMid.tick)
+							{
+								std::swap(end.tick, lastMid.tick);
+								std::swap(end.lane, lastMid.lane);
+								lastMid.lane =
+									std::clamp(lastMid.lane, minLane, maxLane - lastMid.width + 1);
+								end.lane = std::clamp(end.lane, minLane, maxLane - end.width + 1);
+							}
 						}
 					}
 
@@ -1618,7 +1666,11 @@ namespace MikuMikuWorld
 				    context.selectedNotes.begin(), context.selectedNotes.end(),
 				    [&context, diff, minLane, maxLane, maxNoteWidth](int id)
 				    {
-					    Note& n = context.score.notes.at(id);
+						auto it = context.score.notes.find(id);
+						if (it == context.score.notes.end())
+							return false;
+
+					    Note& n = it->second;
 					    int newLane = n.lane + diff;
 					    int newWidth = n.width - diff;
 					    return (newLane < minLane || newLane + newWidth - 1 > maxLane ||
@@ -1659,7 +1711,11 @@ namespace MikuMikuWorld
 				    !std::any_of(context.selectedNotes.begin(), context.selectedNotes.end(),
 				                 [&context, laneDiff, minLane, maxLane](int id)
 				                 {
-					                 Note& n = context.score.notes.at(id);
+									 auto it = context.score.notes.find(id);
+									 if (it == context.score.notes.end())
+										 return false;
+
+					                 Note& n = it->second;
 					                 int newLane = n.lane + laneDiff;
 					                 return (newLane < minLane || newLane + n.width - 1 > maxLane);
 				                 });
@@ -1668,8 +1724,12 @@ namespace MikuMikuWorld
 				{
 					for (id_t id : context.selectedNotes)
 					{
-						Note& n = context.score.notes.at(id);
-						n.lane = std::clamp(n.lane + laneDiff, minLane, maxLane - n.width + 1);
+						auto it = context.score.notes.find(id);
+						if (it != context.score.notes.end())
+						{
+							Note& n = it->second;
+							n.lane = std::clamp(n.lane + laneDiff, minLane, maxLane - n.width + 1);
+						}
 					}
 				}
 			}
@@ -1683,7 +1743,12 @@ namespace MikuMikuWorld
 				bool canMove =
 				    !std::any_of(context.selectedNotes.begin(), context.selectedNotes.end(),
 				                 [&context, tickDiff](int id)
-				                 { return context.score.notes.at(id).tick + tickDiff < 0; });
+				                 {
+									 auto it = context.score.notes.find(id);
+									 if (it == context.score.notes.end())
+										 return false;
+					                 return it->second.tick + tickDiff < 0;
+				                 });
 
 				if (canMove)
 				{
@@ -1693,8 +1758,9 @@ namespace MikuMikuWorld
 					{
 						for (id_t id : context.selectedNotes)
 						{
-							Note& n = context.score.notes.at(id);
-							n.tick = std::max(n.tick + tickDiff, 0);
+							auto it = context.score.notes.find(id);
+							if (it != context.score.notes.end())
+								it->second.tick = std::max(it->second.tick + tickDiff, 0);
 						}
 						break;
 					}
@@ -1707,17 +1773,21 @@ namespace MikuMikuWorld
 
 						for (id_t id : context.selectedNotes)
 						{
-							Note& n = context.score.notes.at(id);
-							n.tick = std::max(n.tick + actualDiff, 0);
+							auto it = context.score.notes.find(id);
+							if (it != context.score.notes.end())
+								it->second.tick = std::max(it->second.tick + actualDiff, 0);
 						}
 
 						break;
 					}
 					case SnapMode::IndividualAbsolute:
 					{
-						std::vector<id_t> sortedSelectedNotes(context.selectedNotes.size());
-						std::copy(context.selectedNotes.begin(), context.selectedNotes.end(),
-						          sortedSelectedNotes.begin());
+						std::vector<id_t> sortedSelectedNotes;
+						for (id_t id : context.selectedNotes)
+						{
+							if (context.score.notes.count(id))
+								sortedSelectedNotes.push_back(id);
+						}
 						std::sort(sortedSelectedNotes.begin(), sortedSelectedNotes.end(),
 						          [&context](id_t a, id_t b) {
 							          return context.score.notes.at(a).tick <
@@ -1726,15 +1796,19 @@ namespace MikuMikuWorld
 
 						for (int id : sortedSelectedNotes)
 						{
-							Note& n = context.score.notes.at(id);
-							auto shiftedTick = n.tick + tickDiff;
-							n.tick = std::max(roundTickDown(shiftedTick, division), 0);
+							auto it = context.score.notes.find(id);
+							if (it != context.score.notes.end())
+							{
+								Note& n = it->second;
+								auto shiftedTick = n.tick + tickDiff;
+								n.tick = std::max(roundTickDown(shiftedTick, division), 0);
+							}
 						}
 
 						break;
 					}
 					default:
-						throw std::runtime_error("Invalid snap mode (Unreachable)");
+						break;
 					}
 				}
 			}
@@ -1930,8 +2004,13 @@ namespace MikuMikuWorld
 	                                       const Color& tint_, const int selectedLayer,
 	                                       const int offsetTicks, const int offsetLane)
 	{
-		const Note& start = notes.at(note.start.ID);
-		const Note& end = notes.at(note.end);
+		auto startIt = notes.find(note.start.ID);
+		auto endIt = notes.find(note.end);
+		if (startIt == notes.end() || endIt == notes.end())
+			return;
+
+		const Note& start = startIt->second;
+		const Note& end = endIt->second;
 		const int length = abs(end.tick - start.tick);
 		auto tint = tint_;
 		if (note.steps.size())
@@ -1949,8 +2028,17 @@ namespace MikuMikuWorld
 						continue;
 
 					s2 = i;
-					const Note& n1 = s1 == -1 ? start : notes.at(note.steps[s1].ID);
-					const Note& n2 = s2 == -1 ? end : notes.at(note.steps[s2].ID);
+					
+					auto n1It = s1 == -1 ? startIt : notes.find(note.steps[s1].ID);
+					auto n2It = s2 == -1 ? endIt : notes.find(note.steps[s2].ID);
+					if (n1It == notes.end() || n2It == notes.end())
+					{
+						s1 = s2;
+						continue;
+					}
+
+					const Note& n1 = n1It->second;
+					const Note& n2 = n2It->second;
 					const EaseType ease = s1 == -1 ? note.start.ease : note.steps[s1].ease;
 					const float p1 = (n1.tick - start.tick) / (float)length;
 					const float p2 = (n2.tick - start.tick) / (float)length;
@@ -1976,8 +2064,13 @@ namespace MikuMikuWorld
 					s1 = s2;
 				}
 
-				const float p1 =
-				    s1 == -1 ? 0 : (notes.at(note.steps[s1].ID).tick - start.tick) / (float)length;
+				float p1 = 0;
+				if (s1 != -1)
+				{
+					auto stepIt = notes.find(note.steps[s1].ID);
+					if (stepIt != notes.end())
+						p1 = (stepIt->second.tick - start.tick) / (float)length;
+				}
 				const float p2 = 1;
 				float a1, a2;
 				if (!note.isGuide() || note.fadeType == FadeType::None)
@@ -1996,10 +2089,14 @@ namespace MikuMikuWorld
 					a2 = 1 - p2;
 				}
 
-				const Note& n1 = s1 == -1 ? start : notes.at(note.steps[s1].ID);
-				const EaseType ease = s1 == -1 ? note.start.ease : note.steps[s1].ease;
-				drawHoldCurve(n1, end, ease, note.isGuide(), renderer, tint, offsetTicks,
-				              offsetLane, a1, a2, note.guideColor, selectedLayer);
+				auto n1It = s1 == -1 ? startIt : notes.find(note.steps[s1].ID);
+				if (n1It != notes.end())
+				{
+					const Note& n1 = n1It->second;
+					const EaseType ease = s1 == -1 ? note.start.ease : note.steps[s1].ease;
+					drawHoldCurve(n1, end, ease, note.isGuide(), renderer, tint, offsetTicks,
+								  offsetLane, a1, a2, note.guideColor, selectedLayer);
+				}
 			}
 
 			s1 = -1;
@@ -2012,7 +2109,11 @@ namespace MikuMikuWorld
 			const Vector2 nodeSz{ notesHeight - 5, notesHeight - 5 };
 			for (int i = 0; i < note.steps.size(); ++i)
 			{
-				const Note& n3 = notes.at(note.steps[i].ID);
+				auto n3It = notes.find(note.steps[i].ID);
+				if (n3It == notes.end())
+					continue;
+
+				const Note& n3 = n3It->second;
 
 				// find first non-skip step
 				s2 = std::distance(note.steps.cbegin(),
@@ -2040,26 +2141,31 @@ namespace MikuMikuWorld
 							if (isSkipStep(note.steps[i]))
 							{
 								// find the note before and after the skip step
-								const Note& n1 = s1 == -1 ? start : notes.at(note.steps[s1].ID);
-								const Note& n2 =
-								    s2 >= note.steps.size() ? end : notes.at(note.steps[s2].ID);
+								auto n1It = s1 == -1 ? startIt : notes.find(note.steps[s1].ID);
+								auto n2It = s2 >= note.steps.size() ? endIt : notes.find(note.steps[s2].ID);
 
-								// calculate the interpolation ratio based on the distance between
-								// n1 and n2
-								float ratio =
-								    (float)(n3.tick - n1.tick) / (float)(n2.tick - n1.tick);
-								const EaseType rEase =
-								    s1 == -1 ? note.start.ease : note.steps[s1].ease;
+								if (n1It != notes.end() && n2It != notes.end())
+								{
+									const Note& n1 = n1It->second;
+									const Note& n2 = n2It->second;
 
-								auto easeFunc = getEaseFunction(rEase);
+									// calculate the interpolation ratio based on the distance between
+									// n1 and n2
+									float ratio =
+										(float)(n3.tick - n1.tick) / (float)(n2.tick - n1.tick);
+									const EaseType rEase =
+										s1 == -1 ? note.start.ease : note.steps[s1].ease;
 
-								// interpolate the step's position
-								float x1 = easeFunc(laneToPosition(n1.lane + offsetLane),
-								                    laneToPosition(n2.lane + offsetLane), ratio);
-								float x2 = easeFunc(laneToPosition(n1.lane + offsetLane + n1.width),
-								                    laneToPosition(n2.lane + offsetLane + n2.width),
-								                    ratio);
-								pos.x = midpoint(x1, x2);
+									auto easeFunc = getEaseFunction(rEase);
+
+									// interpolate the step's position
+									float x1 = easeFunc(laneToPosition(n1.lane + offsetLane),
+									                    laneToPosition(n2.lane + offsetLane), ratio);
+									float x2 = easeFunc(laneToPosition(n1.lane + offsetLane + n1.width),
+									                    laneToPosition(n2.lane + offsetLane + n2.width),
+									                    ratio);
+									pos.x = midpoint(x1, x2);
+								}
 							}
 
 							int z = (selectedLayer == -1
@@ -2930,28 +3036,40 @@ namespace MikuMikuWorld
 			bool playSE = true;
 			if (note.getType() == NoteType::Hold)
 			{
-				playSE = context.score.holdNotes.at(note.ID).startType == HoldNoteType::Normal;
-			}
-			else if (note.getType() == NoteType::HoldEnd)
-			{
-				playSE = context.score.holdNotes.at(note.parentID).endType == HoldNoteType::Normal;
-			}
+			auto holdIt = context.score.holdNotes.find(note.ID);
+			if (holdIt != context.score.holdNotes.end())
+				playSE = holdIt->second.startType == HoldNoteType::Normal;
+		}
+		else if (note.getType() == NoteType::HoldEnd)
+		{
+			auto holdIt = context.score.holdNotes.find(note.parentID);
+			if (holdIt != context.score.holdNotes.end())
+				playSE = holdIt->second.endType == HoldNoteType::Normal;
+		}
 
-			if (playSE)
+		if (playSE)
+		{
+			std::string_view se = getNoteSE(note, context.score);
+			std::string key = std::to_string(note.tick) + "-" + se.data();
+			if (!se.empty() && (playingNoteSounds.find(key) == playingNoteSounds.end()))
 			{
-				std::string_view se = getNoteSE(note, context.score);
-				std::string key = std::to_string(note.tick) + "-" + se.data();
-				if (!se.empty() && (playingNoteSounds.find(key) == playingNoteSounds.end()))
-				{
-					context.audio.playSoundEffect(se.data(), notePlayTime, -1, time);
-					playingNoteSounds.insert(key);
-				}
+				context.audio.playSoundEffect(se.data(), notePlayTime, -1, time);
+				playingNoteSounds.insert(key);
 			}
+		}
 		};
 
 		static auto holdNoteSEFunc = [&context, this](const Note& note, float startTime)
 		{
-			int endTick = context.score.notes.at(context.score.holdNotes.at(note.ID).end).tick;
+			auto holdIt = context.score.holdNotes.find(note.ID);
+			if (holdIt == context.score.holdNotes.end())
+				return;
+
+			auto endIt = context.score.notes.find(holdIt->second.end);
+			if (endIt == context.score.notes.end())
+				return;
+
+			int endTick = endIt->second.tick;
 			float endTime = accumulateDuration(endTick, TICKS_PER_BEAT, context.score.tempoChanges);
 
 			float adjustedEndTime = endTime - playStartTime + audioOffsetCorrection;
@@ -2970,9 +3088,12 @@ namespace MikuMikuWorld
 			if (offsetNoteTime >= timeLastFrame && offsetNoteTime < time)
 			{
 				singleNoteSEFunc(note, notePlayTime - audioOffsetCorrection);
-				if (note.getType() == NoteType::Hold &&
-				    !context.score.holdNotes.at(note.ID).isGuide())
-					holdNoteSEFunc(note, notePlayTime - audioOffsetCorrection);
+				if (note.getType() == NoteType::Hold)
+				{
+					auto holdIt = context.score.holdNotes.find(note.ID);
+					if (holdIt != context.score.holdNotes.end() && !holdIt->second.isGuide())
+						holdNoteSEFunc(note, notePlayTime - audioOffsetCorrection);
+				}
 			}
 			else if (time == playStartTime)
 			{
