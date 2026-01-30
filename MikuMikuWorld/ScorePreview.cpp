@@ -455,14 +455,23 @@ std::array<DirectX::XMFLOAT4, 4> ScorePreviewBackground::DefaultJacket::getRight
 	{
 		lastFrameFullWindow = fullWindow;
 
-		updateToolbar(timeline, context);
+		// Hide toolbar and scrollbar in fullscreen mode
+		if (!isFullWindow())
+		{
+			updateToolbar(timeline, context);
+		}
+		
 		ImGuiIO io = ImGui::GetIO();
 		float mouseWheel = io.MouseWheel * 1;
 		if (!timeline.isPlaying() && ImGui::IsWindowHovered() && mouseWheel != 0)
 		{
 			context.currentTick += std::max(mouseWheel * TICKS_PER_BEAT / 2, (float)-context.currentTick);
 		}
-		updateScrollbar(timeline, context);
+		
+		if (!isFullWindow())
+		{
+			updateScrollbar(timeline, context);
+		}
 
 		playbackState.wasLastFramePlaying = playbackState.isPlaying;
 		playbackState.isPlaying = timeline.isPlaying();

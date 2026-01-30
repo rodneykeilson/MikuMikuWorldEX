@@ -243,10 +243,9 @@ void ScoreEditor::writeSettings()
 				context.lerpHiSpeeds(timeline.getDivision(), EaseType::Linear);
 			if (ImGui::IsAnyPressed(config.input.togglePreviewFullWindow, false))
 				preview.setFullWindow(!preview.isFullWindow());
-
-			for (int i = 0; i < (int)TimelineMode::TimelineModeMax; ++i)
-				if (ImGui::IsAnyPressed(*timelineModeBindings[i]))
-					timeline.changeMode((TimelineMode)i, edit);
+		// ESC key exits fullscreen preview
+		if (preview.isFullWindow() && ImGui::IsKeyPressed(ImGuiKey_Escape))
+			preview.setFullWindow(false);
 		}
 
 		if (!preview.isFullWindow())
