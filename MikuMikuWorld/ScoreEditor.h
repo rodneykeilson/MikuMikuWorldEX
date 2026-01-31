@@ -55,6 +55,7 @@ namespace MikuMikuWorld
 		bool trySave(std::string);
 		void autoSave();
 		int deleteOldAutoSave(int count);
+		void batchConvertSusToCcmmws();
 
 		void drawMenubar();
 		void drawToolbar();

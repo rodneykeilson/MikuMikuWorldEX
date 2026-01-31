@@ -19,6 +19,8 @@ undo, 元に戻す
 redo, やり直す
 select_all, 全て選択
 view, 表示
+tools, ツール
+batch_convert_sus, SUS一括変換 (CCMMWS)
 settings, 設定
 window, ウィンドウ
 vsync, VSync（垂直同期）

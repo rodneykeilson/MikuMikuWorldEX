@@ -20,6 +20,8 @@ undo,Undo
 redo,Redo
 select_all,Select All
 view,View
+tools,Tools
+batch_convert_sus,Batch Convert SUS to CCMMWS
 settings,Settings
 window,Window
 vsync,VSync

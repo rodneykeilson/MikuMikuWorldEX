@@ -15,6 +15,7 @@
 #include "UI.h"
 #include "Utilities.h"
 #include <Windows.h>
+#include <ShlObj.h>
 #include <filesystem>
 #include <fstream>
 #include <iostream>
@@ -512,6 +513,86 @@ void ScoreEditor::writeSettings()
 		UI::setWindowTitle(windowUntitled);
 	}
 
+	void ScoreEditor::batchConvertSusToCcmmws()
+	{
+		// Use Windows folder browser
+		BROWSEINFOW bi = { 0 };
+		bi.lpszTitle = L"Select folder containing SUS/TXT files";
+		bi.ulFlags = BIF_RETURNONLYFSDIRS | BIF_NEWDIALOGSTYLE;
+		
+		LPITEMIDLIST pidlInput = SHBrowseForFolderW(&bi);
+		if (!pidlInput)
+			return;
+		
+		wchar_t inputPath[MAX_PATH];
+		SHGetPathFromIDListW(pidlInput, inputPath);
+		CoTaskMemFree(pidlInput);
+		std::string inputFolder = IO::wideStringToMb(inputPath);
+		
+		bi.lpszTitle = L"Select output folder for CCMMWS files";
+		LPITEMIDLIST pidlOutput = SHBrowseForFolderW(&bi);
+		if (!pidlOutput)
+			return;
+		
+		wchar_t outputPath[MAX_PATH];
+		SHGetPathFromIDListW(pidlOutput, outputPath);
+		CoTaskMemFree(pidlOutput);
+		std::string outputFolder = IO::wideStringToMb(outputPath);
+
+		int successCount = 0;
+		int failCount = 0;
+		std::vector<std::string> errors;
+
+		// Process all .txt and .sus files recursively
+		for (const auto& entry : std::filesystem::recursive_directory_iterator(inputFolder))
+		{
+			if (!entry.is_regular_file())
+				continue;
+
+			std::string ext = entry.path().extension().string();
+			std::transform(ext.begin(), ext.end(), ext.begin(), ::tolower);
+
+			if (ext != ".txt" && ext != ".sus")
+				continue;
+
+			try
+			{
+				// Parse SUS file
+				SusParser susParser;
+				Score score = ScoreConverter::susToScore(susParser.parse(entry.path().string()));
+
+				// Create output path preserving relative structure
+				std::filesystem::path relativePath = std::filesystem::relative(entry.path(), inputFolder);
+				std::filesystem::path ccmmwsPath = std::filesystem::path(outputFolder) / relativePath;
+				ccmmwsPath.replace_extension(".ccmmws");
+
+				// Create directory if needed
+				std::filesystem::create_directories(ccmmwsPath.parent_path());
+
+				// Save as CCMMWS
+				serializeScore(score, ccmmwsPath.string());
+				successCount++;
+			}
+			catch (const std::exception& e)
+			{
+				failCount++;
+				if (errors.size() < 10)
+					errors.push_back(entry.path().filename().string() + ": " + e.what());
+			}
+		}
+
+		// Show result dialog
+		std::string message = IO::formatString("Converted %d files successfully.\n%d files failed.", successCount, failCount);
+		if (!errors.empty())
+		{
+			message += "\n\nFirst errors:";
+			for (const auto& err : errors)
+				message += "\n- " + err;
+		}
+		IO::messageBox(APP_NAME, message, IO::MessageBoxButtons::Ok, 
+			failCount > 0 ? IO::MessageBoxIcon::Warning : IO::MessageBoxIcon::Information);
+	}
+
 	void ScoreEditor::loadScore(std::string filename)
 	{
 		if (!IO::File::exists(filename))
@@ -893,6 +974,14 @@ void ScoreEditor::writeSettings()
 			ImGui::MenuItem(getString("return_to_last_tick"), NULL,
 			                &config.returnToLastSelectedTickOnPause);
 			ImGui::MenuItem(getString("draw_waveform"), NULL, &config.drawWaveform);
+
+			ImGui::EndMenu();
+		}
+
+		if (ImGui::BeginMenu(getString("tools")))
+		{
+			if (ImGui::MenuItem(getString("batch_convert_sus")))
+				batchConvertSusToCcmmws();
 
 			ImGui::EndMenu();
 		}
