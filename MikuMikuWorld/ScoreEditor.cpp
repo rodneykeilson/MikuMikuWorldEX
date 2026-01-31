@@ -1181,7 +1181,18 @@ void ScoreEditor::writeSettings()
 				if (config.autoRecoverFromCrash)
 				{
 					// Auto-recover without prompting
-					loadScore(latestAutoSaveFile);
+					try
+					{
+						loadScore(latestAutoSaveFile);
+					}
+					catch (const std::exception& ex)
+					{
+						// If auto-recovery fails, show error and continue
+						std::string msg = "Failed to auto-recover from crash:\n\n";
+						msg += ex.what();
+						msg += "\n\nStarting with new score instead.";
+						IO::messageBox(APP_NAME, msg, IO::MessageBoxButtons::Ok, IO::MessageBoxIcon::Warning);
+					}
 					return;
 				}
 				else
