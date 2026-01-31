@@ -143,8 +143,12 @@ namespace IO
 		if (line.empty())
 			return line;
 
-		size_t start = line.find_first_not_of(" ");
-		size_t end = line.find_last_not_of(" ");
+		// Trim spaces, tabs, and carriage returns
+		const char* whitespace = " \t\r";
+		size_t start = line.find_first_not_of(whitespace);
+		if (start == std::string::npos)
+			return "";
+		size_t end = line.find_last_not_of(whitespace);
 
 		return line.substr(start, end - start + 1);
 	}

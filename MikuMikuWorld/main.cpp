@@ -1,9 +1,67 @@
 #include "Application.h"
 #include "IO.h"
+#include "SusParser.h"
+#include "ScoreConverter.h"
+#include "Score.h"
 #include <iostream>
+#include <filesystem>
 
 namespace mmw = MikuMikuWorld;
 mmw::Application app;
+
+// Batch convert SUS files to CCMMWS format
+int batchConvert(const std::string& inputDir, const std::string& outputDir)
+{
+	namespace fs = std::filesystem;
+	
+	int successCount = 0;
+	int failCount = 0;
+	
+	std::cout << "Batch converting SUS files from: " << inputDir << std::endl;
+	std::cout << "Output directory: " << outputDir << std::endl;
+	
+	for (const auto& entry : fs::recursive_directory_iterator(inputDir))
+	{
+		if (!entry.is_regular_file())
+			continue;
+			
+		std::string ext = entry.path().extension().string();
+		std::transform(ext.begin(), ext.end(), ext.begin(), ::tolower);
+		
+		if (ext != ".txt" && ext != ".sus")
+			continue;
+		
+		try
+		{
+			// Parse SUS file
+			mmw::SusParser parser;
+			mmw::Score score = mmw::ScoreConverter::susToScore(parser.parse(entry.path().string()));
+			
+			// Create output path preserving relative structure
+			fs::path relativePath = fs::relative(entry.path(), inputDir);
+			fs::path outPath = fs::path(outputDir) / relativePath;
+			outPath.replace_extension(".ccmmws");
+			
+			// Create directory if needed
+			fs::create_directories(outPath.parent_path());
+			
+			// Save as CCMMWS
+			mmw::serializeScore(score, outPath.string());
+			successCount++;
+			
+			if ((successCount + failCount) % 100 == 0)
+				std::cout << "Progress: " << (successCount + failCount) << " files processed" << std::endl;
+		}
+		catch (const std::exception& e)
+		{
+			failCount++;
+			std::cerr << "Error converting " << entry.path().filename().string() << ": " << e.what() << std::endl;
+		}
+	}
+	
+	std::cout << "\nConversion complete: " << successCount << " successful, " << failCount << " failed" << std::endl;
+	return failCount > 0 ? 1 : 0;
+}
 
 int main()
 {
@@ -15,6 +73,18 @@ int main()
 		IO::messageBox(APP_NAME, "CommandLineToArgvW failed...", IO::MessageBoxButtons::Ok,
 		               IO::MessageBoxIcon::Error);
 		return 1;
+	}
+
+	// Check for batch conversion mode
+	if (argc >= 4)
+	{
+		std::string arg1 = IO::wideStringToMb(args[1]);
+		if (arg1 == "--batch-convert")
+		{
+			std::string inputDir = IO::wideStringToMb(args[2]);
+			std::string outputDir = IO::wideStringToMb(args[3]);
+			return batchConvert(inputDir, outputDir);
+		}
 	}
 
 	try
