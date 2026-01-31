@@ -99,7 +99,7 @@ namespace MikuMikuWorld
 		{
 			accentColor = jsonIO::tryGetValue<int>(config["theme"], "accent_color", 1);
 			userColor = jsonIO::tryGetValue(config["theme"], "user_color", Color{});
-			baseTheme = (BaseTheme)jsonIO::tryGetValue<int>(config["theme"], "base_theme", 0);
+			baseTheme = (BaseTheme)jsonIO::tryGetValue<int>(config["theme"], "base_theme", (int)BaseTheme::RODEN);
 		}
 
 		if (jsonIO::keyExists(config, "save"))
