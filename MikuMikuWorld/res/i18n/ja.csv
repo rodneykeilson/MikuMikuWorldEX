@@ -296,4 +296,4 @@ start_fresh, 新規開始
 # session
 session, セッション
 restore_last_session, 起動時に前回のファイルを開く
-auto_recover_from_crash, 自動保存からの自動復元
+

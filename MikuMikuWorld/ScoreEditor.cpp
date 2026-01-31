@@ -1166,53 +1166,23 @@ void ScoreEditor::writeSettings()
 
 	void ScoreEditor::checkForCrashRecovery()
 	{
-		latestAutoSaveFile = findLatestAutoSave();
-		
-		if (!latestAutoSaveFile.empty())
-		{
-			// Check if the auto-save file is recent (within last 24 hours)
-			auto fileTime = std::filesystem::last_write_time(latestAutoSaveFile);
-			auto now = std::filesystem::file_time_type::clock::now();
-			auto age = now - fileTime;
-			
-			// Only consider recovery if file is less than 24 hours old
-			if (age < std::chrono::hours(24))
-			{
-				if (config.autoRecoverFromCrash)
-				{
-					// Auto-recover without prompting
-					try
-					{
-						loadScore(latestAutoSaveFile);
-					}
-					catch (const std::exception& ex)
-					{
-						// If auto-recovery fails, show error and continue
-						std::string msg = "Failed to auto-recover from crash:\n\n";
-						msg += ex.what();
-						msg += "\n\nStarting with new score instead.";
-						IO::messageBox(APP_NAME, msg, IO::MessageBoxButtons::Ok, IO::MessageBoxIcon::Warning);
-					}
-					return;
-				}
-				else
-				{
-					showCrashRecoveryDialog = true;
-					return; // Don't restore session if crash recovery is available
-				}
-			}
-		}
-		
-		// Session restore - load last opened file if enabled
+		// Simple session restore - reopen last file with position if enabled
 		if (config.restoreLastSession && !config.lastOpenedFile.empty())
 		{
 			if (IO::File::exists(config.lastOpenedFile))
 			{
-				loadScore(config.lastOpenedFile);
-				
-				// Restore scroll position
-				context.currentTick = config.lastScrollPosition;
-				timeline.setZoom(config.lastZoom);
+				try
+				{
+					loadScore(config.lastOpenedFile);
+					
+					// Restore scroll position and zoom
+					context.currentTick = config.lastScrollPosition;
+					timeline.setZoom(config.lastZoom);
+				}
+				catch (...)
+				{
+					// If loading fails, just start with empty score
+				}
 			}
 		}
 	}
