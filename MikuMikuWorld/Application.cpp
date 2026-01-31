@@ -54,9 +54,6 @@ namespace MikuMikuWorld
 
 		loadResources();
 
-		// Load difficulty estimation model
-		ScoreStats::loadDifficultyModel(appDir + "data/difficulty_model.json");
-
 		editor = std::make_unique<ScoreEditor>();
 		editor->loadPresets(appDir + "library");
 

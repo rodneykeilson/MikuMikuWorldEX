@@ -25,6 +25,8 @@ Additional features in MikuMikuWorldEX:
 
 - Real-time preview with particle effects and audio
 - Preview supports all MMWCC note types including damage notes and colored guides
+- Roden theme - Clean, seamless, modern UI theme
+- Difficulty estimator (inaccurate) - Polynomial formula-based level estimation
 
 ## Planned Features
 
