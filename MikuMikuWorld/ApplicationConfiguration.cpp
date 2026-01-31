@@ -112,7 +112,9 @@ namespace MikuMikuWorld
 		if (jsonIO::keyExists(config, "session"))
 		{
 			restoreLastSession = jsonIO::tryGetValue<bool>(config["session"], "restore_last_session", true);
-
+			lastOpenedFile = jsonIO::tryGetValue<std::string>(config["session"], "last_opened_file", "");
+			lastScrollPosition = jsonIO::tryGetValue<int>(config["session"], "last_scroll_position", 0);
+			lastZoom = jsonIO::tryGetValue<float>(config["session"], "last_zoom", 2.0f);
 		}
 
 		if (jsonIO::keyExists(config, "audio"))
@@ -221,7 +223,7 @@ namespace MikuMikuWorld
 			               { "auto_save_max_count", autoSaveMaxCount } };
 
 		config["session"] = { { "restore_last_session", restoreLastSession },
-
+			                  { "last_opened_file", lastOpenedFile },
 			                  { "last_scroll_position", lastScrollPosition },
 			                  { "last_zoom", lastZoom } };
 
@@ -278,6 +280,7 @@ namespace MikuMikuWorld
 		vsync = true;
 		accentColor = 1;
 		userColor = Color(0.2f, 0.2f, 0.2f, 1.0f);
+		baseTheme = BaseTheme::RODEN;
 		language = "auto";
 
 		minifyUsc = true;
