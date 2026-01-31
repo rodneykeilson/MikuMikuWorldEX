@@ -112,6 +112,7 @@ namespace MikuMikuWorld
 		if (jsonIO::keyExists(config, "session"))
 		{
 			restoreLastSession = jsonIO::tryGetValue<bool>(config["session"], "restore_last_session", true);
+			autoRecoverFromCrash = jsonIO::tryGetValue<bool>(config["session"], "auto_recover_from_crash", true);
 			lastOpenedFile = jsonIO::tryGetValue<std::string>(config["session"], "last_opened_file", "");
 			lastScrollPosition = jsonIO::tryGetValue<int>(config["session"], "last_scroll_position", 0);
 			lastZoom = jsonIO::tryGetValue<float>(config["session"], "last_zoom", 1.0f);
@@ -223,6 +224,7 @@ namespace MikuMikuWorld
 			               { "auto_save_max_count", autoSaveMaxCount } };
 
 		config["session"] = { { "restore_last_session", restoreLastSession },
+			                  { "auto_recover_from_crash", autoRecoverFromCrash },
 			                  { "last_opened_file", lastOpenedFile },
 			                  { "last_scroll_position", lastScrollPosition },
 			                  { "last_zoom", lastZoom } };
@@ -308,6 +310,7 @@ namespace MikuMikuWorld
 		autoSaveMaxCount = 100;
 
 		restoreLastSession = true;
+		autoRecoverFromCrash = true;
 		lastOpenedFile = "";
 		lastScrollPosition = 0;
 		lastZoom = 1.0f;

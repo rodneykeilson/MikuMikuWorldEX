@@ -1175,11 +1175,20 @@ void ScoreEditor::writeSettings()
 			auto now = std::filesystem::file_time_type::clock::now();
 			auto age = now - fileTime;
 			
-			// Only show recovery dialog if file is less than 24 hours old
+			// Only consider recovery if file is less than 24 hours old
 			if (age < std::chrono::hours(24))
 			{
-				showCrashRecoveryDialog = true;
-				return; // Don't restore session if crash recovery is available
+				if (config.autoRecoverFromCrash)
+				{
+					// Auto-recover without prompting
+					loadScore(latestAutoSaveFile);
+					return;
+				}
+				else
+				{
+					showCrashRecoveryDialog = true;
+					return; // Don't restore session if crash recovery is available
+				}
 			}
 		}
 		

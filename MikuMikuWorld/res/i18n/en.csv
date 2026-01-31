@@ -307,6 +307,7 @@ start_fresh,Start Fresh
 # session
 session,Session
 restore_last_session,Restore last opened file on startup
+auto_recover_from_crash,Automatically recover from auto-save
 
 # preview settings
 notes_speed,Notes Speed

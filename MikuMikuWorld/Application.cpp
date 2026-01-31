@@ -5,6 +5,7 @@
 #include "Localization.h"
 #include "NoteSkin.h"
 #include "ResourceManager.h"
+#include "ScoreStats.h"
 #include "Utilities.h"
 #include <filesystem>
 #include <json.hpp>
@@ -52,6 +53,9 @@ namespace MikuMikuWorld
 		imgui->applyAccentColor(config.accentColor);
 
 		loadResources();
+
+		// Load difficulty estimation model
+		ScoreStats::loadDifficultyModel(appDir + "data/difficulty_model.json");
 
 		editor = std::make_unique<ScoreEditor>();
 		editor->loadPresets(appDir + "library");

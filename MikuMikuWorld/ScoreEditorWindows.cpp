@@ -1358,6 +1358,8 @@ namespace MikuMikuWorld
 						UI::beginPropertyColumns();
 						UI::addCheckboxProperty(getString("restore_last_session"),
 						                        config.restoreLastSession);
+						UI::addCheckboxProperty(getString("auto_recover_from_crash"),
+						                        config.autoRecoverFromCrash);
 						UI::endPropertyColumns();
 					}
 

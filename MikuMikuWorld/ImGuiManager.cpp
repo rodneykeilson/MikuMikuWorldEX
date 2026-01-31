@@ -36,7 +36,7 @@ namespace MikuMikuWorld
 		if (!ImGui_ImplOpenGL3_Init("#version 150"))
 			return Result(ResultStatus::Error, "Failed to initialize ImGui OpenGL implementation.");
 
-		setBaseTheme(BaseTheme::DARK);
+		setBaseTheme(BaseTheme::RODEN);
 
 		return Result::Ok();
 	}

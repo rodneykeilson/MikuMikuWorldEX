@@ -139,6 +139,7 @@ namespace MikuMikuWorld
 
 		// Session restore
 		bool restoreLastSession;
+		bool autoRecoverFromCrash;  // Auto-recover from auto-save without prompting
 		std::string lastOpenedFile;
 		int lastScrollPosition;
 		float lastZoom;
