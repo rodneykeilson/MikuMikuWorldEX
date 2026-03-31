@@ -379,6 +379,7 @@ void ScoreEditor::writeSettings()
 			ImGuiWindowFlags_NoScrollbar |
 			ImGuiWindowFlags_NoScrollWithMouse;
 
+		bool isPreviewOpen;
 		if (isFullScreenPreview())
 		{
 			ImGuiViewport* viewport = ImGui::GetMainViewport();
@@ -390,16 +391,22 @@ void ScoreEditor::writeSettings()
 			ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0);
 			ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, { 0, 0 });
 
-			ImGui::Begin(IMGUI_TITLE(ICON_FA_OBJECT_GROUP, "score_preview_full"), NULL, previewWindowFlags);
+			isPreviewOpen = ImGui::Begin(IMGUI_TITLE(ICON_FA_OBJECT_GROUP, "score_preview_full"), NULL,
+			                          previewWindowFlags);
 			ImGui::PopStyleVar(2);
 		}
 		else
 		{
-			ImGui::Begin(IMGUI_TITLE(ICON_FA_OBJECT_GROUP, "score_preview"), NULL, previewWindowFlags);
+			isPreviewOpen = ImGui::Begin(IMGUI_TITLE(ICON_FA_OBJECT_GROUP, "score_preview"), NULL,
+			                          previewWindowFlags);
 		}
 
-		preview.update(context, renderer.get());
-		preview.updateUI(timeline, context);
+		if (isPreviewOpen)
+		{
+			preview.update(context, renderer.get());
+			preview.updateUI(timeline, context);
+		}
+
 		ImGui::End();
 
 		if (config.debugEnabled)

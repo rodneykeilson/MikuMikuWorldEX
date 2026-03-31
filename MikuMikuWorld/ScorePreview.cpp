@@ -340,6 +340,10 @@ std::array<DirectX::XMFLOAT4, 4> ScorePreviewBackground::DefaultJacket::getRight
 			context.scorePreviewDrawData.calculateDrawData(context.score);
 			
 		ImVec2 size = ImGui::GetContentRegionAvail() - ImVec2{ this->getScrollbarWidth(), 0 };
+		if (size.x == 0 || size.y == 0)
+		{
+			return;
+		}
 		ImVec2 position = ImGui::GetCursorScreenPos();
 		ImRect boundaries = ImRect(position, position + size);
 
